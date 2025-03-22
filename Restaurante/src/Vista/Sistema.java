@@ -205,7 +205,7 @@ public final class Sistema extends javax.swing.JFrame {
         btnGuardarUser = new javax.swing.JButton();
         btnEditarUser = new javax.swing.JButton();
         btnEliminarUser = new javax.swing.JButton();
-        btnNuevoUser = new javax.swing.JButton();
+        btnModificarUser = new javax.swing.JButton();
         txtIdUser = new javax.swing.JTextField();
         jPanel2 = new javax.swing.JPanel();
         jPanel11 = new javax.swing.JPanel();
@@ -1184,13 +1184,13 @@ public final class Sistema extends javax.swing.JFrame {
         });
         jPanel15.add(btnEliminarUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 440, 110, 50));
 
-        btnNuevoUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/nuevo.png"))); // NOI18N
-        btnNuevoUser.addActionListener(new java.awt.event.ActionListener() {
+        btnModificarUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/nuevo.png"))); // NOI18N
+        btnModificarUser.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnNuevoUserActionPerformed(evt);
+                btnModificarUserActionPerformed(evt);
             }
         });
-        jPanel15.add(btnNuevoUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 440, 100, 50));
+        jPanel15.add(btnModificarUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 440, 100, 50));
 
         txtIdUser.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1780,6 +1780,7 @@ public final class Sistema extends javax.swing.JFrame {
                 // Por ejemplo, limpiar la tabla de usuarios, actualizar lista y limpiar campos
                 LimpiarTable();
                 ListarUsuarios();
+                LimpiarUsuarios();
             } else {
                 JOptionPane.showMessageDialog(null, "Error al registrar el usuario");
             }
@@ -1790,27 +1791,45 @@ public final class Sistema extends javax.swing.JFrame {
     }//GEN-LAST:event_btnGuardarUserActionPerformed
 
     private void btnEditarUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarUserActionPerformed
-        // TODO add your handling code here:
+        // Verificamos que se haya seleccionado un usuario (se asume que el ID se muestra en txtIdUser)
         if ("".equals(txtIdUser.getText())) {
-            JOptionPane.showMessageDialog(null, "Seleecione una fila");
+            JOptionPane.showMessageDialog(null, "Seleccione una fila");
         } else {
-            if (!"".equals(txtCorreo.getText()) || !"".equals(txtPass.getText())|| !"".equals(txtNombre.getText())) {
-                lg.setCorreo(txtCorreo.getText());
-                lg.setPass(txtPass.getText());
-                lg.setNombre(txtNombre.getText());
-                lg.setId_Rol(cbxRol.getSelected());
-                if(lg.getId_Rol() == 1) {
-                    cbxRol.setSelectedItem("Administrador");
-                } else if(lg.getId_Rol() == 2) {
-                    cbxRol.setSelectedItem("Asistente");
-                }
-                if (lgDao.updateUsuario(lg)) {
-                    JOptionPane.showMessageDialog(null, "Usuario Modificado");
-                    LimpiarTable();
-                    ListarUsuarios();
-                    LimpiarUsuarios();
-                }
+            try {
+                // Convertir el ID de texto a entero
+                int id = Integer.parseInt(txtIdUser.getText());
+                // Llamamos al método que invoca la función getUsuario de Oracle
+                String userInfo = loginDao.getUsuario(id);
+                // Se asume que la cadena retornada tiene el formato:
+                // "Nombre: <nombre>, Email: <email>, Contraseña: <contraseña>, Id_Rol: <rol>"
+                String[] parts = userInfo.split(", ");
+                if (parts.length == 4) {
+                    // Extraer cada dato separadamente
+                    String nombre = parts[0].split(": ")[1];
+                    String email = parts[1].split(": ")[1];
+                    String pass = parts[2].split(": ")[1];
+                    int idRol = Integer.parseInt(parts[3].split(": ")[1]);
 
+                    // Asignar valores al objeto global (o a variables locales)
+                    lg.setNombre(nombre);
+                    lg.setCorreo(email);
+                    lg.setPass(pass);
+                    lg.setId_Rol(idRol);
+
+                    // Rellenar los campos del formulario
+                    txtNombre.setText(nombre);
+                    txtCorreo.setText(email);
+                    txtPass.setText(pass);
+                    if (idRol == 1) {
+                        cbxRol.setSelectedItem("Administrador");
+                    } else if (idRol == 2) {
+                        cbxRol.setSelectedItem("Asistente");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Formato de datos incorrecto: " + userInfo);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(null, "El ID debe ser numérico");
             }
         }
     }//GEN-LAST:event_btnEditarUserActionPerformed
@@ -1831,9 +1850,49 @@ public final class Sistema extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btnEliminarUserActionPerformed
 
-    private void btnNuevoUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoUserActionPerformed
-        LimpiarUsuarios();
-    }//GEN-LAST:event_btnNuevoUserActionPerformed
+    private void btnModificarUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnModificarUserActionPerformed
+        // Verificar que se tenga un ID (se asume que txtIdUser ya contiene el ID del usuario a editar)
+        if ("".equals(txtIdUser.getText())) {
+            JOptionPane.showMessageDialog(null, "No hay usuario seleccionado");
+            return;
+        }
+
+        try {
+            // Obtener los datos del formulario
+            int id = Integer.parseInt(txtIdUser.getText());
+            String nombre = txtNombre.getText();
+            String email = txtCorreo.getText();
+            String pass = txtPass.getText();
+            String rolSeleccionado = cbxRol.getSelectedItem().toString();
+            int idRol = 0;
+            if (rolSeleccionado.equalsIgnoreCase("Administrador")) {
+                idRol = 1;
+            } else if (rolSeleccionado.equalsIgnoreCase("Asistente")) {
+                idRol = 2;
+            }
+
+            // Crear y llenar el objeto usuario
+            login user = new login();
+            user.setId(id);
+            user.setNombre(nombre);
+            user.setCorreo(email);
+            user.setPass(pass);
+            user.setId_Rol(idRol);
+
+            // Llamar al método updateUsuario que internamente usa el procedimiento almacenado en Oracle
+            if (loginDao.updateUsuario(user)) {
+                JOptionPane.showMessageDialog(null, "Usuario modificado exitosamente");
+                // Actualizar la tabla de usuarios y limpiar campos, según convenga
+                LimpiarTable();
+                ListarUsuarios();
+                LimpiarUsuarios();
+            } else {
+                JOptionPane.showMessageDialog(null, "Error al actualizar el usuario");
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null, "Error en el formato de datos: " + ex.getMessage());
+        }
+    }//GEN-LAST:event_btnModificarUserActionPerformed
 
     private void txtIdPlatoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtIdPlatoActionPerformed
         // TODO add your handling code here:
@@ -1875,9 +1934,9 @@ public final class Sistema extends javax.swing.JFrame {
     private javax.swing.JButton btnGenerarPedido;
     private javax.swing.JButton btnGuardarPlato;
     private javax.swing.JButton btnGuardarUser;
+    private javax.swing.JButton btnModificarUser;
     private javax.swing.JButton btnNuevoPlato;
     private javax.swing.JButton btnNuevoSala;
-    private javax.swing.JButton btnNuevoUser;
     private javax.swing.JButton btnPdfPedido;
     private javax.swing.JButton btnPlatos;
     private javax.swing.JButton btnRegistrarSala;

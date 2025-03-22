@@ -175,15 +175,17 @@ public class LoginDao {
     
     public List<login> ListarUsuarios() {
         List<login> lista = new ArrayList<>();
+        Connection con = null;
+        CallableStatement cs = null;
+        ResultSet rs = null;
         try {
             con = cn.getConnection();
-            // Llamamos al procedimiento getUsuarios que retorna un SYS_REFCURSOR
             cs = con.prepareCall("{ call getUsuarios(?) }");
             cs.registerOutParameter(1, OracleTypes.CURSOR);
             cs.execute();
 
             rs = (ResultSet) cs.getObject(1);
-            while (rs.next()) {               
+            while (rs.next()) {
                 login lg = new login();
                 lg.setId(rs.getInt("id"));
                 lg.setNombre(rs.getString("nombre"));
@@ -204,6 +206,7 @@ public class LoginDao {
         }
         return lista;
     }
+
 
     public boolean updateUsuario(login reg) {
         Connection con = null;
@@ -256,6 +259,31 @@ public class LoginDao {
             }
         }
     }
+    
+    public String getUsuario(int id) {
+        String userInfo = "";
+        Connection con = null;
+        CallableStatement cs = null;
+        try {
+            con = cn.getConnection(); // instancia de Conexion
+            cs = con.prepareCall("{ ? = call getUsuario(?) }");
+            cs.registerOutParameter(1, java.sql.Types.VARCHAR);
+            cs.setInt(2, id);
+            cs.execute();
+            userInfo = cs.getString(1);
+        } catch (SQLException e) {
+            System.out.println("Error en getUsuario: " + e.getMessage());
+        } finally {
+            try {
+                if (cs != null) cs.close();
+                if (con != null) con.close();
+            } catch (SQLException ex) {
+                System.out.println("Error cerrando recursos en getUsuario: " + ex.getMessage());
+            }
+        }
+        return userInfo;
+    }
+
     
     /*public Config datosEmpresa(){
         Config conf = new Config();
