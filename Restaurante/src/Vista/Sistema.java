@@ -69,7 +69,7 @@ public final class Sistema extends javax.swing.JFrame {
         txtIdHistorialPedido.setVisible(false);
         txtIdConfig.setVisible(false);
         
-        if (priv.getRol().equals("Administrador")) {
+        if (priv.getId_Rol() == 1) { //1 es Administrador
             btnSala.setEnabled(false);
             btnConfig.setEnabled(false);
             LabelVendedor.setText(priv.getNombre());
@@ -192,7 +192,6 @@ public final class Sistema extends javax.swing.JFrame {
         jLabel35 = new javax.swing.JLabel();
         txtCorreo = new javax.swing.JTextField();
         txtPass = new javax.swing.JPasswordField();
-        btnIniciar = new javax.swing.JButton();
         jLabel36 = new javax.swing.JLabel();
         txtNombre = new javax.swing.JTextField();
         jLabel37 = new javax.swing.JLabel();
@@ -202,6 +201,11 @@ public final class Sistema extends javax.swing.JFrame {
         jPanel18 = new javax.swing.JPanel();
         jPanel21 = new javax.swing.JPanel();
         jLabel39 = new javax.swing.JLabel();
+        btnGuardarUser = new javax.swing.JButton();
+        btnEditarUser = new javax.swing.JButton();
+        btnEliminarUser = new javax.swing.JButton();
+        btnNuevoUser = new javax.swing.JButton();
+        btnIniciar = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jPanel11 = new javax.swing.JPanel();
         jLabel23 = new javax.swing.JLabel();
@@ -1060,11 +1064,11 @@ public final class Sistema extends javax.swing.JFrame {
 
         jLabel34.setFont(new java.awt.Font("Times New Roman", 3, 14)); // NOI18N
         jLabel34.setText("Correo Electrónico");
-        jPanel15.add(jLabel34, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 102, -1, -1));
+        jPanel15.add(jLabel34, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 50, -1, -1));
 
         jLabel35.setFont(new java.awt.Font("Times New Roman", 3, 14)); // NOI18N
         jLabel35.setText("Password");
-        jPanel15.add(jLabel35, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 180, 130, -1));
+        jPanel15.add(jLabel35, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 130, 130, -1));
 
         txtCorreo.setBackground(new java.awt.Color(204, 204, 204));
         txtCorreo.setBorder(null);
@@ -1073,35 +1077,23 @@ public final class Sistema extends javax.swing.JFrame {
                 txtCorreoActionPerformed(evt);
             }
         });
-        jPanel15.add(txtCorreo, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 126, 300, 30));
+        jPanel15.add(txtCorreo, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 80, 300, 30));
 
         txtPass.setBackground(new java.awt.Color(204, 204, 204));
         txtPass.setBorder(null);
-        jPanel15.add(txtPass, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 300, 30));
-
-        btnIniciar.setBackground(new java.awt.Color(0, 0, 0));
-        btnIniciar.setFont(new java.awt.Font("Times New Roman", 1, 13)); // NOI18N
-        btnIniciar.setForeground(new java.awt.Color(255, 255, 255));
-        btnIniciar.setText("Registrar");
-        btnIniciar.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        btnIniciar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnIniciarActionPerformed(evt);
-            }
-        });
-        jPanel15.add(btnIniciar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 440, 300, 50));
+        jPanel15.add(txtPass, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 150, 300, 30));
 
         jLabel36.setFont(new java.awt.Font("Times New Roman", 3, 14)); // NOI18N
         jLabel36.setText("Nombre:");
-        jPanel15.add(jLabel36, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 280, -1, -1));
+        jPanel15.add(jLabel36, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, -1, -1));
 
         txtNombre.setBackground(new java.awt.Color(204, 204, 204));
         txtNombre.setBorder(null);
-        jPanel15.add(txtNombre, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 300, 300, 30));
+        jPanel15.add(txtNombre, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 220, 300, 30));
 
         jLabel37.setFont(new java.awt.Font("Times New Roman", 3, 14)); // NOI18N
         jLabel37.setText("Rol:");
-        jPanel15.add(jLabel37, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 360, 90, -1));
+        jPanel15.add(jLabel37, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 270, 90, -1));
 
         cbxRol.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Administrador", "Asistente" }));
         cbxRol.addActionListener(new java.awt.event.ActionListener() {
@@ -1109,7 +1101,7 @@ public final class Sistema extends javax.swing.JFrame {
                 cbxRolActionPerformed(evt);
             }
         });
-        jPanel15.add(cbxRol, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 380, 300, 30));
+        jPanel15.add(cbxRol, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 290, 300, 30));
 
         jPanel16.setBackground(new java.awt.Color(0, 0, 0));
 
@@ -1124,7 +1116,7 @@ public final class Sistema extends javax.swing.JFrame {
             .addGap(0, 2, Short.MAX_VALUE)
         );
 
-        jPanel15.add(jPanel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 156, 300, 2));
+        jPanel15.add(jPanel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 110, 300, 2));
 
         jPanel17.setBackground(new java.awt.Color(0, 0, 0));
 
@@ -1139,7 +1131,7 @@ public final class Sistema extends javax.swing.JFrame {
             .addGap(0, 2, Short.MAX_VALUE)
         );
 
-        jPanel15.add(jPanel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 230, 300, 2));
+        jPanel15.add(jPanel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 180, 300, 2));
 
         jPanel18.setBackground(new java.awt.Color(0, 0, 0));
 
@@ -1154,7 +1146,7 @@ public final class Sistema extends javax.swing.JFrame {
             .addGap(0, 2, Short.MAX_VALUE)
         );
 
-        jPanel15.add(jPanel18, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 330, 300, 2));
+        jPanel15.add(jPanel18, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 250, 300, 2));
 
         jPanel21.setBackground(new java.awt.Color(0, 0, 0));
         jPanel21.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -1163,11 +1155,55 @@ public final class Sistema extends javax.swing.JFrame {
         jLabel39.setForeground(new java.awt.Color(255, 255, 255));
         jLabel39.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel39.setText("Nuevo Usuario");
-        jPanel21.add(jLabel39, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 310, 35));
+        jPanel21.add(jLabel39, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 0, 310, 35));
 
         jPanel15.add(jPanel21, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 360, 35));
 
+        btnGuardarUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/GuardarTodo.png"))); // NOI18N
+        btnGuardarUser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGuardarUserActionPerformed(evt);
+            }
+        });
+        jPanel15.add(btnGuardarUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 340, 110, 50));
+
+        btnEditarUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/Actualizar (2).png"))); // NOI18N
+        btnEditarUser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEditarUserActionPerformed(evt);
+            }
+        });
+        jPanel15.add(btnEditarUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 340, 100, 50));
+
+        btnEliminarUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/eliminar.png"))); // NOI18N
+        btnEliminarUser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEliminarUserActionPerformed(evt);
+            }
+        });
+        jPanel15.add(btnEliminarUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 440, 110, 50));
+
+        btnNuevoUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Img/nuevo.png"))); // NOI18N
+        btnNuevoUser.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnNuevoUserActionPerformed(evt);
+            }
+        });
+        jPanel15.add(btnNuevoUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 440, 100, 50));
+
         jPanel12.add(jPanel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 40, 360, 520));
+
+        btnIniciar.setBackground(new java.awt.Color(0, 0, 0));
+        btnIniciar.setFont(new java.awt.Font("Times New Roman", 1, 13)); // NOI18N
+        btnIniciar.setForeground(new java.awt.Color(255, 255, 255));
+        btnIniciar.setText("Registrar");
+        btnIniciar.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        btnIniciar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnIniciarActionPerformed(evt);
+            }
+        });
+        jPanel12.add(btnIniciar, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 440, 300, 50));
 
         jTabbedPane1.addTab("Usuarios", jPanel12);
 
@@ -1409,7 +1445,7 @@ public final class Sistema extends javax.swing.JFrame {
             conf.setDireccion(txtDireccionConfig.getText());
             conf.setMensaje(txtMensaje.getText());
             conf.setId(Integer.parseInt(txtIdConfig.getText()));
-            lgDao.ModificarDatos(conf);
+            lgDao.updateUsuario(conf);
             JOptionPane.showMessageDialog(null, "Datos de la empresa modificado");
             //ListarConfig();
         } else {
@@ -1516,11 +1552,19 @@ public final class Sistema extends javax.swing.JFrame {
             String correo = txtCorreo.getText();
             String pass = String.valueOf(txtPass.getPassword());
             String nom = txtNombre.getText();
-            String rol = cbxRol.getSelectedItem().toString();
+            String rolSeleccionado = cbxRol.getSelectedItem().toString();
+            int idRol;
+            if (rolSeleccionado.equalsIgnoreCase("Administrador")) {
+                idRol = 1;
+            } else if (rolSeleccionado.equalsIgnoreCase("Asistente")) {
+                idRol = 2;
+            } else {
+                idRol = 0; // O asignar otro valor por defecto
+            }
             lg.setNombre(nom);
             lg.setCorreo(correo);
             lg.setPass(pass);
-            lg.setRol(rol);
+            lg.setId_Rol(idRol);
             lgDao.Registrar(lg);
             JOptionPane.showMessageDialog(null, "Usuario Registrado");
         }
@@ -1728,6 +1772,80 @@ public final class Sistema extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_cbxRolActionPerformed
 
+    private void btnGuardarUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarUserActionPerformed
+        // Ejemplo en el evento del botón "Registrar Usuario"                                                
+    // Validamos que ningún campo esté vacío
+        if (!"".equals(txtNombre.getText()) &&
+            !"".equals(txtCorreo.getText()) &&
+            !"".equals(txtPass.getText()) &&
+            cbxRol.getSelectedItem() != null &&
+            !"".equals(cbxRol.getSelectedItem().toString())) {
+
+            // Creamos el objeto usuario (login)
+            login usr = new login();
+            usr.setNombre(txtNombre.getText());
+            usr.setCorreo(txtCorreo.getText());
+            usr.setPass(txtPass.getText());
+
+            // Convertir el rol seleccionado a un id numérico:
+            // Suponiendo que "Administrador" corresponde al id 1 y "Asistente" al id 2.
+            String rolSeleccionado = cbxRol.getSelectedItem().toString();
+            int idRol = 0;
+            if (rolSeleccionado.equalsIgnoreCase("Administrador")) {
+                idRol = 1;
+            } else if (rolSeleccionado.equalsIgnoreCase("Asistente")) {
+                idRol = 2;
+            }
+            usr.setId_Rol(idRol);
+
+            // Llamamos al método Registrar que usa el procedimiento de Oracle
+            if (lgDao.Registrar(usr)) {
+                JOptionPane.showMessageDialog(null, "Usuario registrado correctamente");
+                // Por ejemplo, limpiar la tabla de usuarios, actualizar lista y limpiar campos
+                ListarUsuarios();
+            } else {
+                JOptionPane.showMessageDialog(null, "Error al registrar el usuario");
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Los campos están vacíos");
+        }
+
+    }//GEN-LAST:event_btnGuardarUserActionPerformed
+
+    private void btnEditarUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarUserActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnEditarUserActionPerformed
+
+    private void btnEliminarUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarUserActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnEliminarUserActionPerformed
+
+    private void btnNuevoUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoUserActionPerformed
+        if (txtNombre.getText().equals("") || txtCorreo.getText().equals("") || txtPass.getPassword().equals("")) {
+            JOptionPane.showMessageDialog(null, "Todo los campos son requeridos");
+        } else {
+            login lg = new login();
+            String correo = txtCorreo.getText();
+            String pass = String.valueOf(txtPass.getPassword());
+            String nom = txtNombre.getText();
+            String rolSeleccionado = cbxRol.getSelectedItem().toString();
+            int idRol;
+            if (rolSeleccionado.equalsIgnoreCase("Administrador")) {
+                idRol = 1;
+            } else if (rolSeleccionado.equalsIgnoreCase("Asistente")) {
+                idRol = 2;
+            } else {
+                idRol = 0; // O asignar otro valor por defecto
+            }
+            lg.setNombre(nom);
+            lg.setCorreo(correo);
+            lg.setPass(pass);
+            lg.setId_Rol(idRol);
+            lgDao.Registrar(lg);
+            JOptionPane.showMessageDialog(null, "Usuario Registrado");
+        }                         
+    }//GEN-LAST:event_btnNuevoUserActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel LabelVendedor;
@@ -1741,15 +1859,19 @@ public final class Sistema extends javax.swing.JFrame {
     private javax.swing.JButton btnAddPlato;
     private javax.swing.JButton btnConfig;
     private javax.swing.JButton btnEditarPlato;
+    private javax.swing.JButton btnEditarUser;
     private javax.swing.JButton btnEliminarPlato;
     private javax.swing.JButton btnEliminarSala;
     private javax.swing.JButton btnEliminarTempPlato;
+    private javax.swing.JButton btnEliminarUser;
     private javax.swing.JButton btnFinalizar;
     private javax.swing.JButton btnGenerarPedido;
     private javax.swing.JButton btnGuardarPlato;
+    private javax.swing.JButton btnGuardarUser;
     private javax.swing.JButton btnIniciar;
     private javax.swing.JButton btnNuevoPlato;
     private javax.swing.JButton btnNuevoSala;
+    private javax.swing.JButton btnNuevoUser;
     private javax.swing.JButton btnPdfPedido;
     private javax.swing.JButton btnPlatos;
     private javax.swing.JButton btnRegistrarSala;
@@ -1865,6 +1987,125 @@ public final class Sistema extends javax.swing.JFrame {
     private javax.swing.JTextField txtTempNumMesa;
     // End of variables declaration//GEN-END:variables
 
+    private LoginDao loginDao = new LoginDao();
+    
+    // Ejemplo de método para registrar un usuario
+    public void registrarUsuario() {
+        // Supongamos que obtienes los datos desde campos de texto de tu formulario
+        String nombre = txtNombre.getText();
+        String correo = txtCorreo.getText();
+        String pass = txtPass.getText();
+        // Conversión del rol según lo seleccionado en el ComboBox
+        String rolSeleccionado = cbxRol.getSelectedItem().toString();
+        int idRol = 0;
+        if (rolSeleccionado.equalsIgnoreCase("Administrador")) {
+            idRol = 1;
+        } else if (rolSeleccionado.equalsIgnoreCase("Asistente")) {
+            idRol = 2;
+        }
+        
+        if (!nombre.isEmpty() && !correo.isEmpty() && !pass.isEmpty() && idRol != 0) {
+            login user = new login();
+            user.setNombre(nombre);
+            user.setCorreo(correo);
+            user.setPass(pass);
+            user.setId_Rol(idRol);
+            
+            if (loginDao.Registrar(user)) {
+                JOptionPane.showMessageDialog(null, "Usuario registrado con éxito");
+                listarUsuarios();  // Actualiza la lista de usuarios en la interfaz
+                limpiarCamposUsuarios();
+            } else {
+                JOptionPane.showMessageDialog(null, "Error al registrar el usuario");
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Debe completar todos los campos");
+        }
+    }
+    
+    // Ejemplo de método para actualizar un usuario
+    public void actualizarUsuario() {
+        // Supongamos que txtIdUser contiene el ID a actualizar
+        String nombre = txtNombre.getText();
+        String correo = txtCorreo.getText();
+        char[] pass = txtPass.getPassword();
+        String rolSeleccionado = cbxRol.getSelectedItem().toString();
+        int idRol = 0;
+        if (rolSeleccionado.equalsIgnoreCase("Administrador")) {
+            idRol = 1;
+        } else if (rolSeleccionado.equalsIgnoreCase("Asistente")) {
+            idRol = 2;
+        }
+        
+        if (!nombre.isEmpty() || !correo.isEmpty() || !pass.isEmpty() || idRol != 0) {
+            login user = new login();
+            user.setNombre(nombre);
+            user.setCorreo(correo);
+            user.setPass(pass);
+            user.setId_Rol(idRol);
+            
+            if (loginDao.updateUsuario(user)) {
+                JOptionPane.showMessageDialog(null, "Usuario actualizado con éxito");
+                listarUsuarios();
+                limpiarCamposUsuarios();
+            } else {
+                JOptionPane.showMessageDialog(null, "Error al actualizar el usuario");
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Debe completar todos los campos");
+        }
+    }
+    
+    // Ejemplo de método para eliminar un usuario
+    public void eliminarUsuario() {
+        // Obtenemos la fila seleccionada en la tabla de usuarios
+        int filaSeleccionada = TableUsuarios.getSelectedRow();
+
+        // Verificamos que se haya seleccionado una fila
+        if (filaSeleccionada == -1) {
+            JOptionPane.showMessageDialog(null, "Seleccione un usuario para eliminar");
+            return;
+        }
+
+        // Se obtiene el ID del usuario (suponiendo que está en la primera columna de la tabla)
+        int id = Integer.parseInt(TableUsuarios.getValueAt(filaSeleccionada, 0).toString());
+
+        // Confirmamos la eliminación
+        if (JOptionPane.showConfirmDialog(null, "¿Está seguro de eliminar este usuario?") == JOptionPane.OK_OPTION) {
+            if (loginDao.deleteUsuario(id)) {
+                JOptionPane.showMessageDialog(null, "Usuario eliminado");
+                listarUsuarios();
+                limpiarCamposUsuarios();
+            } else {
+                JOptionPane.showMessageDialog(null, "Error al eliminar el usuario");
+            }
+        }
+    }
+    
+    // Ejemplo de método para listar usuarios en una tabla
+    public void listarUsuarios() {
+        List<login> lista = loginDao.ListarUsuarios();
+        DefaultTableModel modelo = (DefaultTableModel) TableUsuarios.getModel();
+        modelo.setRowCount(0); // Limpiar la tabla antes de agregar nuevos registros
+        Object[] fila = new Object[4];
+        for (login user : lista) {
+            fila[0] = user.getId();
+            fila[1] = user.getNombre();
+            fila[2] = user.getCorreo();
+            fila[3] = user.getId_Rol();
+            modelo.addRow(fila);
+        }
+        TableUsuarios.setModel(modelo);
+    }
+    
+    // Método para limpiar campos del formulario de usuarios
+    private void limpiarCamposUsuarios() {
+        txtNombre.setText("");
+        txtCorreo.setText("");
+        txtPass.setText("");
+        cbxRol.setSelectedIndex(0);
+    }
+    
     private void TotalPagar(JTable tabla, JLabel label) {
         Totalpagar = 0.00;
         int numFila = tabla.getRowCount();
@@ -1927,7 +2168,7 @@ public final class Sistema extends javax.swing.JFrame {
             ob[0] = Listar.get(i).getId();
             ob[1] = Listar.get(i).getNombre();
             ob[2] = Listar.get(i).getCorreo();
-            ob[3] = Listar.get(i).getRol();
+            ob[3] = Listar.get(i).getId_Rol();
             modelo.addRow(ob);
         }
         colorHeader(TableUsuarios);

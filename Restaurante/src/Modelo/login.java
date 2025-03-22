@@ -5,7 +5,6 @@ public class login {
     private int id;
     private String nombre;
     private String correo;
-    private String rol;  // Nuevo atributo para almacenar el nombre del rol
     private String pass;
     private int id_rol;
 
@@ -54,12 +53,16 @@ public class login {
     }
 
     
-public void setRol(String rol) {
-    this.rol = rol;
-}
+    public void setId_Rol(int id_rol) {
+        this.id_rol = id_rol;
+    }
 
-public String getRol() {
-    return rol;
-}
+    public int getId_Rol() {
+        return id_rol;
+    }
+
+    public void setPass(char[] pass) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
     
 }

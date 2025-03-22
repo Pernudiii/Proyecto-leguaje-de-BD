@@ -1,6 +1,8 @@
 
 package Vista;
 
+import Modelo.Conexion;
+import java.sql.Connection;
 import Modelo.LoginDao;
 import Modelo.login;
 import java.awt.Image;
@@ -21,7 +23,7 @@ public class FrmLogin extends javax.swing.JFrame {
     public FrmLogin() {
         initComponents();
         this.setLocationRelativeTo(null);
-        txtCorreo.setText("admin@gmail.com");
+        txtCorreo.setText("ADMINISTRADOR");
         txtPass.setText("123");
         barra.setVisible(false);
         ImageIcon img = new ImageIcon(getClass().getResource("/Img/logo.png"));
@@ -43,22 +45,51 @@ public class FrmLogin extends javax.swing.JFrame {
             }
         }
     }
-    public void validar(){
+    public void validar() {
         String email = txtCorreo.getText();
         String contraseña = String.valueOf(txtPass.getPassword());
+
         if (!"".equals(email) && !"".equals(contraseña)) {
-            
-            lg = login.log(email, contraseña);
-            if (lg.getCorreo()!= null && lg.getPass() != null) {
-                barra.setVisible(true);
-                contador = -1;
-                barra.setValue(0);
-                barra.setStringPainted(true);
-                tiempo = new Timer(segundos, new BarraProgreso());
-                tiempo.start();
-            }else{
-                JOptionPane.showMessageDialog(null, "Correo o la Contraseña incorrecta");
+            // Si se ingresan las credenciales del admin, se conecta directamente con el usuario ADMINISTRADOR
+            if(email.equalsIgnoreCase("ADMINISTRADOR") && contraseña.equals("123")) {
+                lg = new login();
+                lg.setCorreo("ADMINISTRADOR");
+                lg.setPass("123");
+                lg.setNombre("Administrador");
+                lg.setId_Rol(1); // Asumiendo que el id_rol 1 representa al admin
+
+                // Se establece la conexión con el admin
+                Connection con = new Conexion().getConnection();
+                if (con != null) {
+                    // Aquí puedes iniciar la sesión y proceder con la aplicación
+                    barra.setVisible(true);
+                    contador = -1;
+                    barra.setValue(0);
+                    barra.setStringPainted(true);
+                    tiempo = new Timer(segundos, new BarraProgreso());
+                    tiempo.start();
+                    JOptionPane.showMessageDialog(null, "Conectado como ADMINISTRADOR");
+                } else {
+                    JOptionPane.showMessageDialog(null, "Error de conexión");
+                }
+            } else {
+                // Si no son credenciales del admin, se consulta la tabla de usuarios
+                lg = login.log(email, contraseña);
+                if (lg.getCorreo() != null && lg.getPass() != null) {
+                    // Se inicia la sesión ya que se encontró el usuario en la tabla
+                    barra.setVisible(true);
+                    contador = -1;
+                    barra.setValue(0);
+                    barra.setStringPainted(true);
+                    tiempo = new Timer(segundos, new BarraProgreso());
+                    tiempo.start();
+                    JOptionPane.showMessageDialog(null, "Bienvenido " + lg.getNombre());
+                } else {
+                    JOptionPane.showMessageDialog(null, "Correo o Contraseña incorrectos");
+                }
             }
+        } else {
+            JOptionPane.showMessageDialog(null, "Por favor ingrese correo y contraseña");
         }
     }
     /**
