@@ -52,6 +52,7 @@ public final class Sistema extends javax.swing.JFrame {
     DefaultTableModel tmp = new DefaultTableModel();
 
     LoginDao lgDao = new LoginDao();
+    login lg = new login(); 
     int item;
     double Totalpagar = 0.00;
 
@@ -205,7 +206,7 @@ public final class Sistema extends javax.swing.JFrame {
         btnEditarUser = new javax.swing.JButton();
         btnEliminarUser = new javax.swing.JButton();
         btnNuevoUser = new javax.swing.JButton();
-        btnIniciar = new javax.swing.JButton();
+        txtIdUser = new javax.swing.JTextField();
         jPanel2 = new javax.swing.JPanel();
         jPanel11 = new javax.swing.JPanel();
         jLabel23 = new javax.swing.JLabel();
@@ -524,7 +525,7 @@ public final class Sistema extends javax.swing.JFrame {
             jPanel22Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel22Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane9, javax.swing.GroupLayout.DEFAULT_SIZE, 564, Short.MAX_VALUE)
+                .addComponent(jScrollPane9, javax.swing.GroupLayout.DEFAULT_SIZE, 623, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -707,7 +708,7 @@ public final class Sistema extends javax.swing.JFrame {
         jPanel23Layout.setVerticalGroup(
             jPanel23Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel23Layout.createSequentialGroup()
-                .addContainerGap(27, Short.MAX_VALUE)
+                .addContainerGap(93, Short.MAX_VALUE)
                 .addGroup(jPanel23Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel23Layout.createSequentialGroup()
                         .addGroup(jPanel23Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1189,21 +1190,16 @@ public final class Sistema extends javax.swing.JFrame {
                 btnNuevoUserActionPerformed(evt);
             }
         });
-        jPanel15.add(btnNuevoUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 440, 100, 50));
+        jPanel15.add(btnNuevoUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 440, 100, 50));
 
-        jPanel12.add(jPanel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 40, 360, 520));
-
-        btnIniciar.setBackground(new java.awt.Color(0, 0, 0));
-        btnIniciar.setFont(new java.awt.Font("Times New Roman", 1, 13)); // NOI18N
-        btnIniciar.setForeground(new java.awt.Color(255, 255, 255));
-        btnIniciar.setText("Registrar");
-        btnIniciar.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        btnIniciar.addActionListener(new java.awt.event.ActionListener() {
+        txtIdUser.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnIniciarActionPerformed(evt);
+                txtIdUserActionPerformed(evt);
             }
         });
-        jPanel12.add(btnIniciar, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 440, 300, 50));
+        jPanel15.add(txtIdUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 510, 80, -1));
+
+        jPanel12.add(jPanel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 40, 360, 540));
 
         jTabbedPane1.addTab("Usuarios", jPanel12);
 
@@ -1315,6 +1311,12 @@ public final class Sistema extends javax.swing.JFrame {
         );
 
         jPanel11.add(jPanel39, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 290, 50));
+
+        txtIdPlato.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtIdPlatoActionPerformed(evt);
+            }
+        });
         jPanel11.add(txtIdPlato, new org.netbeans.lib.awtextra.AbsoluteConstraints(110, 470, 80, -1));
 
         jLabel26.setFont(new java.awt.Font("Tahoma", 3, 12)); // NOI18N
@@ -1399,12 +1401,12 @@ public final class Sistema extends javax.swing.JFrame {
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jScrollPane4)
                     .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, 543, Short.MAX_VALUE))
-                .addContainerGap(22, Short.MAX_VALUE))
+                .addContainerGap(67, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Platos", jPanel2);
 
-        getContentPane().add(jTabbedPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 95, 1080, 620));
+        getContentPane().add(jTabbedPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(200, 95, 1080, 670));
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -1543,32 +1545,6 @@ public final class Sistema extends javax.swing.JFrame {
     private void txtCorreoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtCorreoActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtCorreoActionPerformed
-
-    private void btnIniciarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnIniciarActionPerformed
-        if (txtNombre.getText().equals("") || txtCorreo.getText().equals("") || txtPass.getPassword().equals("")) {
-            JOptionPane.showMessageDialog(null, "Todo los campos son requeridos");
-        } else {
-            login lg = new login();
-            String correo = txtCorreo.getText();
-            String pass = String.valueOf(txtPass.getPassword());
-            String nom = txtNombre.getText();
-            String rolSeleccionado = cbxRol.getSelectedItem().toString();
-            int idRol;
-            if (rolSeleccionado.equalsIgnoreCase("Administrador")) {
-                idRol = 1;
-            } else if (rolSeleccionado.equalsIgnoreCase("Asistente")) {
-                idRol = 2;
-            } else {
-                idRol = 0; // O asignar otro valor por defecto
-            }
-            lg.setNombre(nom);
-            lg.setCorreo(correo);
-            lg.setPass(pass);
-            lg.setId_Rol(idRol);
-            lgDao.Registrar(lg);
-            JOptionPane.showMessageDialog(null, "Usuario Registrado");
-        }
-    }//GEN-LAST:event_btnIniciarActionPerformed
 
     private void labelLogoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_labelLogoMouseClicked
         jTabbedPane1.setSelectedIndex(0);
@@ -1802,6 +1778,7 @@ public final class Sistema extends javax.swing.JFrame {
             if (lgDao.Registrar(usr)) {
                 JOptionPane.showMessageDialog(null, "Usuario registrado correctamente");
                 // Por ejemplo, limpiar la tabla de usuarios, actualizar lista y limpiar campos
+                LimpiarTable();
                 ListarUsuarios();
             } else {
                 JOptionPane.showMessageDialog(null, "Error al registrar el usuario");
@@ -1814,38 +1791,68 @@ public final class Sistema extends javax.swing.JFrame {
 
     private void btnEditarUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarUserActionPerformed
         // TODO add your handling code here:
+        if ("".equals(txtIdUser.getText())) {
+            JOptionPane.showMessageDialog(null, "Seleecione una fila");
+        } else {
+            if (!"".equals(txtCorreo.getText()) || !"".equals(txtPass.getText())|| !"".equals(txtNombre.getText())) {
+                lg.setCorreo(txtCorreo.getText());
+                lg.setPass(txtPass.getText());
+                lg.setNombre(txtNombre.getText());
+                lg.setId_Rol(cbxRol.getSelected());
+                if(lg.getId_Rol() == 1) {
+                    cbxRol.setSelectedItem("Administrador");
+                } else if(lg.getId_Rol() == 2) {
+                    cbxRol.setSelectedItem("Asistente");
+                }
+                if (lgDao.updateUsuario(lg)) {
+                    JOptionPane.showMessageDialog(null, "Usuario Modificado");
+                    LimpiarTable();
+                    ListarUsuarios();
+                    LimpiarUsuarios();
+                }
+
+            }
+        }
     }//GEN-LAST:event_btnEditarUserActionPerformed
 
     private void btnEliminarUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarUserActionPerformed
         // TODO add your handling code here:
+        if (!"".equals(txtIdUser.getText())) {
+            int pregunta = JOptionPane.showConfirmDialog(null, "Esta seguro de eliminar");
+            if (pregunta == 0) {
+                int id = Integer.parseInt(txtIdUser.getText());
+                lgDao.deleteUsuario(id);
+                LimpiarTable();
+                LimpiarPlatos();
+                ListarUsuarios();
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Selecciona una fila");
+        }
     }//GEN-LAST:event_btnEliminarUserActionPerformed
 
     private void btnNuevoUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoUserActionPerformed
-        if (txtNombre.getText().equals("") || txtCorreo.getText().equals("") || txtPass.getPassword().equals("")) {
-            JOptionPane.showMessageDialog(null, "Todo los campos son requeridos");
-        } else {
-            login lg = new login();
-            String correo = txtCorreo.getText();
-            String pass = String.valueOf(txtPass.getPassword());
-            String nom = txtNombre.getText();
-            String rolSeleccionado = cbxRol.getSelectedItem().toString();
-            int idRol;
-            if (rolSeleccionado.equalsIgnoreCase("Administrador")) {
-                idRol = 1;
-            } else if (rolSeleccionado.equalsIgnoreCase("Asistente")) {
-                idRol = 2;
-            } else {
-                idRol = 0; // O asignar otro valor por defecto
-            }
-            lg.setNombre(nom);
-            lg.setCorreo(correo);
-            lg.setPass(pass);
-            lg.setId_Rol(idRol);
-            lgDao.Registrar(lg);
-            JOptionPane.showMessageDialog(null, "Usuario Registrado");
-        }                         
+        LimpiarUsuarios();
     }//GEN-LAST:event_btnNuevoUserActionPerformed
 
+    private void txtIdPlatoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtIdPlatoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_txtIdPlatoActionPerformed
+
+    private void txtIdUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtIdUserActionPerformed
+        int filaSeleccionada = TableUsuarios.getSelectedRow();
+        if (filaSeleccionada != -1) {
+            // Se obtiene el valor de la columna 0 (ID) y se convierte a entero
+            int idUsuario = Integer.parseInt(TableUsuarios.getValueAt(filaSeleccionada, 0).toString());
+            // Se convierte el entero a String para mostrarlo en el campo de texto
+            txtIdUser.setText(String.valueOf(idUsuario));
+        } else {
+            JOptionPane.showMessageDialog(null, "Seleccione un usuario de la tabla");
+        }
+
+
+    }//GEN-LAST:event_txtIdUserActionPerformed
+    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel LabelVendedor;
@@ -1868,7 +1875,6 @@ public final class Sistema extends javax.swing.JFrame {
     private javax.swing.JButton btnGenerarPedido;
     private javax.swing.JButton btnGuardarPlato;
     private javax.swing.JButton btnGuardarUser;
-    private javax.swing.JButton btnIniciar;
     private javax.swing.JButton btnNuevoPlato;
     private javax.swing.JButton btnNuevoSala;
     private javax.swing.JButton btnNuevoUser;
@@ -1971,6 +1977,7 @@ public final class Sistema extends javax.swing.JFrame {
     private javax.swing.JTextField txtIdPedido;
     private javax.swing.JTextField txtIdPlato;
     private javax.swing.JTextField txtIdSala;
+    private javax.swing.JTextField txtIdUser;
     private javax.swing.JTextField txtMensaje;
     private javax.swing.JTextField txtMesas;
     private javax.swing.JTextField txtNombre;
@@ -2206,6 +2213,13 @@ public final class Sistema extends javax.swing.JFrame {
         txtIdPlato.setText("");
         txtNombrePlato.setText("");
         txtPrecioPlato.setText("");
+    }
+    
+    private void LimpiarUsuarios() {
+        txtCorreo.setText("");
+        txtPass.setText("");
+        txtNombre.setText("");
+        txtIdUser.setText("");
     }
 
     private void panelSalas() {
