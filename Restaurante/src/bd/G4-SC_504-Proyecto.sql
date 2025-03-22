@@ -1,54 +1,113 @@
 1. USUARIO
+
 -- Crear tabla
 CREATE TABLE USUARIO (
-    id NUMBER PRIMARY KEY,
+    id NUMBER GENERATED AS IDENTITY PRIMARY KEY,
     nombre VARCHAR2(100),
-    email VARCHAR2(100)
+    email VARCHAR2(100),
+    contraseña VARCHAR2(20),
+    id_rol NUMBER,
+    CONSTRAINT fk_rol FOREIGN KEY (id_rol) REFERENCES ROL(id)
 );
-
+drop table usuario;
 -- CRUD
 -- Crear
-CREATE OR REPLACE PROCEDURE createUsuario(usuarioData IN USUARIO%ROWTYPE) IS
-BEGIN
-    INSERT INTO USUARIO (id, nombre, email) 
-    VALUES (usuarioData.id, usuarioData.nombre, usuarioData.email);
+CREATE OR REPLACE PROCEDURE createUsuario(  
+    P_NOMBRE VARCHAR2,  
+    P_EMAIL VARCHAR2,  
+    P_CONTRASEÑA VARCHAR2,  
+    P_ID_ROL NUMBER  
+) AS  
+BEGIN  
+    INSERT INTO USUARIO (nombre, email, contraseña, id_rol)
+    VALUES (P_NOMBRE, P_EMAIL, P_CONTRASEÑA, P_ID_ROL);  
+
+    COMMIT;  
+EXCEPTION  
+    WHEN OTHERS THEN  
+        ROLLBACK;  
+        RAISE;  
 END;
 /
 
 -- Leer
-CREATE OR REPLACE FUNCTION getUsuario(id IN NUMBER) RETURN USUARIO%ROWTYPE IS
-    usuarioRecord USUARIO%ROWTYPE;
-BEGIN
-    SELECT * INTO usuarioRecord FROM USUARIO WHERE id = id;
-    RETURN usuarioRecord;
+CREATE OR REPLACE FUNCTION getUsuario(
+    P_ID NUMBER  
+) RETURN VARCHAR2 AS  
+    V_NOMBRE VARCHAR2(100);  
+    V_EMAIL VARCHAR2(100);  
+    V_CONTRASEÑA VARCHAR2(20);  
+    V_ID_ROL NUMBER;  
+    V_RESULTADO VARCHAR2(500);  
+BEGIN  
+    SELECT nombre, email, contraseña, id_rol  
+    INTO V_NOMBRE, V_EMAIL, V_CONTRASEÑA, V_ID_ROL  
+    FROM USUARIO  
+    WHERE id = P_ID;  
+
+    V_RESULTADO := 'Nombre: ' || V_NOMBRE || 
+                   ', Email: ' || V_EMAIL || 
+                   ', Contraseña: ' || V_CONTRASEÑA || 
+                   ', Id_Rol: ' || TO_CHAR(V_ID_ROL);  
+    RETURN V_RESULTADO;  
+EXCEPTION  
+    WHEN NO_DATA_FOUND THEN  
+        RETURN 'Usuario no encontrado';  
+    WHEN OTHERS THEN  
+        RETURN 'Error al obtener el usuario';  
 END;
 /
+
+CREATE OR REPLACE PROCEDURE getUsuarios(p_cursor OUT SYS_REFCURSOR) AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT id, nombre, email, id_rol FROM usuario;
+END;
+/
+
+
 
 -- Actualizar
-CREATE OR REPLACE PROCEDURE updateUsuario(id IN NUMBER, usuarioData IN USUARIO%ROWTYPE) IS
-BEGIN
-    UPDATE USUARIO 
-    SET nombre = usuarioData.nombre, email = usuarioData.email 
-    WHERE id = id;
+CREATE OR REPLACE PROCEDURE updateUsuario(
+    P_ID NUMBER,  
+    P_NOMBRE VARCHAR2,  
+    P_EMAIL VARCHAR2,  
+    P_CONTRASEÑA VARCHAR2,  
+    P_ID_ROL NUMBER  
+) AS  
+BEGIN  
+    UPDATE USUARIO  
+    SET nombre = P_NOMBRE,  
+        email = P_EMAIL,  
+        contraseña = P_CONTRASEÑA,  
+        id_rol = P_ID_ROL  
+    WHERE id = P_ID;  
+
+    COMMIT;  
+EXCEPTION  
+    WHEN OTHERS THEN  
+        ROLLBACK;  
+        RAISE;  
 END;
 /
+
 
 -- Eliminar
-CREATE OR REPLACE PROCEDURE deleteUsuario(id IN NUMBER) IS
-BEGIN
-    DELETE FROM USUARIO WHERE id = id;
+CREATE OR REPLACE PROCEDURE deleteUsuario(
+    P_ID NUMBER  
+) AS  
+BEGIN  
+    DELETE FROM USUARIO  
+    WHERE id = P_ID;  
+
+    COMMIT;  
+EXCEPTION  
+    WHEN OTHERS THEN  
+        ROLLBACK;  
+        RAISE;  
 END;
 /
 
-2. PRODUCTO
--- Crear tabla
-CREATE TABLE PRODUCTO (
-    id NUMBER PRIMARY KEY,
-    nombre VARCHAR2(100),
-    precio NUMBER(10, 2),
-    categoria_id NUMBER,
-    CONSTRAINT fk_categoria FOREIGN KEY (categoria_id) REFERENCES CATEGORIA(id)
-);
 
 -- CRUD
 -- Crear
@@ -656,4 +715,16 @@ BEGIN
     DELETE FROM ORDEN_COMPRA WHERE id = id;
 END;
 /
+
+INSERT INTO usuario (nombre, email, contraseña, id_rol)
+VALUES ('ADMIN', 'admin@gmail.com', '123', '1');
+
+
+
+INSERT INTO rol (id, nombre) VALUES (1, 'Administrador');
+INSERT INTO rol (id, nombre) VALUES (2, 'Asistente');
+COMMIT;
+
+SELECT * FROM USUARIO;
+SELECT * FROM ROL;
 
