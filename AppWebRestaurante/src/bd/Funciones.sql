@@ -1,198 +1,183 @@
--- 1. Usuario por ID
-CREATE OR REPLACE FUNCTION getUsuario(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
-v_email VARCHAR2(100);
-v_contraseña VARCHAR2(20);
-v_id_rol NUMBER;
+--Funciones
+-- Función 1: Obtener el precio de un producto
+CREATE OR REPLACE FUNCTION FIDE_PRODUCTO_OBTENER_PRECIO_FN (P_ID_PRODUCTO NUMBER)
+RETURN NUMBER
+IS
+    V_PRECIO NUMBER;
 BEGIN
-SELECT nombre, email, contraseña, id_rol
-INTO v_nombre, v_email, v_contraseña, v_id_rol
-FROM USUARIO WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre || ', Email: ' || v_email ||
-', Contraseña: ' || v_contraseña || ', Rol: ' || v_id_rol;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Usuario no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el usuario';
+    SELECT precio INTO V_PRECIO
+    FROM FIDE_PRODUCTO_TB
+    WHERE id_producto = P_ID_PRODUCTO;
+    RETURN V_PRECIO;
 END;
 /
--- 2. Producto por ID
-CREATE OR REPLACE FUNCTION getProducto(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
-v_precio NUMBER;
-v_categoria_id NUMBER;
+-- Función 2: Calcular el total de un pedido (cantidad * precio unitario)
+CREATE OR REPLACE FUNCTION FIDE_PEDIDO_CALCULAR_TOTAL_FN (P_CANTIDAD NUMBER, P_PRECIO_UNITARIO NUMBER)
+RETURN NUMBER
+IS
+    V_TOTAL NUMBER;
 BEGIN
-SELECT nombre, precio, categoria_id
-INTO v_nombre, v_precio, v_categoria_id
-FROM PRODUCTO WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre || ', Precio: ' || v_precio || ', Categoría: ' || v_categoria_id;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Producto no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el producto';
+    V_TOTAL := P_CANTIDAD * P_PRECIO_UNITARIO;
+    RETURN V_TOTAL;
 END;
 /
--- 3. Categoría por ID
-CREATE OR REPLACE FUNCTION getCategoria(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
+-- Función 3: Obtener el nombre de un cliente
+CREATE OR REPLACE FUNCTION FIDE_CLIENTE_OBTENER_NOMBRE_FN (P_ID_CLIENTE NUMBER)
+RETURN VARCHAR2
+IS
+    V_NOMBRE VARCHAR2(100);
 BEGIN
-SELECT nombre INTO v_nombre FROM CATEGORIA WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Categoría no encontrada';
-WHEN OTHERS THEN RETURN 'Error al obtener la categoría';
+    SELECT nombre INTO V_NOMBRE
+    FROM FIDE_CLIENTE_TB
+    WHERE id_cliente = P_ID_CLIENTE;
+    RETURN V_NOMBRE;
 END;
 /
--- 4. Pedido por ID
-CREATE OR REPLACE FUNCTION getPedido(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_fecha DATE;
-v_cliente_id NUMBER;
-v_estado_id NUMBER;
+-- Función 4: Obtener el nombre de un producto
+CREATE OR REPLACE FUNCTION FIDE_PRODUCTO_OBTENER_NOMBRE_FN (P_ID_PRODUCTO NUMBER)
+RETURN VARCHAR2
+IS
+    V_NOMBRE VARCHAR2(100);
 BEGIN
-SELECT fecha, cliente_id, estado_id
-INTO v_fecha, v_cliente_id, v_estado_id
-FROM PEDIDO WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Fecha: ' || TO_CHAR(v_fecha) || ', Cliente: ' || v_cliente_id || ', Estado: ' || v_estado_id;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Pedido no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el pedido';
+    SELECT nombre INTO V_NOMBRE
+    FROM FIDE_PRODUCTO_TB
+    WHERE id_producto = P_ID_PRODUCTO;
+    RETURN V_NOMBRE;
 END;
 /
--- 5. Ingreso por ID
-CREATE OR REPLACE FUNCTION getIngreso(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_monto NUMBER(10,2);
-v_fecha DATE;
+-- Función 5: Obtener el stock total de un producto
+CREATE OR REPLACE FUNCTION FIDE_PRODUCTO_OBTENER_STOCK_FN (P_ID_PRODUCTO NUMBER)
+RETURN NUMBER
+IS
+    V_STOCK NUMBER;
 BEGIN
-SELECT monto, fecha INTO v_monto, v_fecha FROM INGRESO WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Monto: ' || v_monto || ', Fecha: ' || TO_CHAR(v_fecha);
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Ingreso no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el ingreso';
+    SELECT 
+        (SELECT NVL(SUM(cantidad), 0) FROM FIDE_INGRESO_TB WHERE id_producto = P_ID_PRODUCTO) -
+        (SELECT NVL(SUM(cantidad), 0) FROM FIDE_EGRESO_TB WHERE id_producto = P_ID_PRODUCTO)
+    INTO V_STOCK
+    FROM DUAL;
+    RETURN V_STOCK;
 END;
 /
--- 6. Egreso por ID
-CREATE OR REPLACE FUNCTION getEgreso(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_monto NUMBER(10,2);
-v_fecha DATE;
+-- Función 6: Obtener la dirección de un cliente
+CREATE OR REPLACE FUNCTION FIDE_CLIENTE_OBTENER_DIRECCION_FN (P_ID_CLIENTE NUMBER)
+RETURN VARCHAR2
+IS
+    V_DIRECCION VARCHAR2(255);
 BEGIN
-SELECT monto, fecha INTO v_monto, v_fecha FROM EGRESO WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Monto: ' || v_monto || ', Fecha: ' || TO_CHAR(v_fecha);
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Egreso no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el egreso';
+    SELECT direccion INTO V_DIRECCION
+    FROM FIDE_DIRECCION_TB
+    WHERE id_cliente = P_ID_CLIENTE;
+    RETURN V_DIRECCION;
 END;
 /
--- 7. Rol por ID
-CREATE OR REPLACE FUNCTION getRol(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
+-- Función 7: Verificar si un usuario existe
+CREATE OR REPLACE FUNCTION FIDE_USUARIO_EXISTE_FN (P_CORREO VARCHAR2)
+RETURN NUMBER
+IS
+    V_COUNT NUMBER;
 BEGIN
-SELECT nombre INTO v_nombre FROM ROL WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Rol no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el rol';
+    SELECT COUNT(*) INTO V_COUNT
+    FROM FIDE_USUARIO_TB
+    WHERE correo = P_CORREO;
+    RETURN V_COUNT;
 END;
 /
--- 8. Cliente por ID
-CREATE OR REPLACE FUNCTION getCliente(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
-v_email VARCHAR2(100);
-v_telefono VARCHAR2(20);
+-- Función 8: Calcular el subtotal de un pedido
+CREATE OR REPLACE FUNCTION FIDE_PEDIDO_CALCULAR_SUBTOTAL_FN (P_CANTIDAD NUMBER, P_PRECIO_UNITARIO NUMBER)
+RETURN NUMBER
+IS
+    V_SUBTOTAL NUMBER;
 BEGIN
-SELECT nombre, email, telefono
-INTO v_nombre, v_email, v_telefono
-FROM CLIENTE WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre || ', Email: ' || v_email || ', Teléfono: ' || v_telefono;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Cliente no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el cliente';
+    V_SUBTOTAL := P_CANTIDAD * P_PRECIO_UNITARIO;
+    RETURN V_SUBTOTAL;
 END;
 /
--- 9. Dirección por ID
-CREATE OR REPLACE FUNCTION getDireccion(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_cliente_id NUMBER;
-v_calle VARCHAR2(100);
-v_ciudad VARCHAR2(100);
-v_provincia_id NUMBER;
-v_canton_id NUMBER;
-v_distrito_id NUMBER;
+-- Función 9: Obtener el rol de un usuario
+CREATE OR REPLACE FUNCTION FIDE_USUARIO_OBTENER_ROL_FN (P_ID_USUARIO NUMBER)
+RETURN VARCHAR2
+IS
+    V_NOMBRE_ROL VARCHAR2(100);
 BEGIN
-SELECT cliente_id, calle, ciudad, provincia_id, canton_id, distrito_id
-INTO v_cliente_id, v_calle, v_ciudad, v_provincia_id, v_canton_id, v_distrito_id
-FROM DIRECCION WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Cliente: ' || v_cliente_id || ', Calle: ' || v_calle ||
-', Ciudad: ' || v_ciudad || ', Provincia: ' || v_provincia_id ||
-', Cantón: ' || v_canton_id || ', Distrito: ' || v_distrito_id;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Dirección no encontrada';
-WHEN OTHERS THEN RETURN 'Error al obtener la dirección';
+    SELECT R.nombre INTO V_NOMBRE_ROL
+    FROM FIDE_USUARIO_TB U
+    INNER JOIN FIDE_ROL_TB R ON U.id_rol = R.id_rol
+    WHERE U.id_usuario = P_ID_USUARIO;
+    RETURN V_NOMBRE_ROL;
 END;
 /
--- 10. Provincia por ID
-CREATE OR REPLACE FUNCTION getProvincia(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
+-- Función 10: Contar los productos en una categoría
+CREATE OR REPLACE FUNCTION FIDE_CATEGORIA_CONTAR_PRODUCTOS_FN (P_ID_CATEGORIA NUMBER)
+RETURN NUMBER
+IS
+    V_COUNT NUMBER;
 BEGIN
-SELECT nombre INTO v_nombre FROM PROVINCIA WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Provincia no encontrada';
-WHEN OTHERS THEN RETURN 'Error al obtener la provincia';
+    SELECT COUNT(*) INTO V_COUNT
+    FROM FIDE_PRODUCTO_TB
+    WHERE id_categoria = P_ID_CATEGORIA;
+    RETURN V_COUNT;
 END;
 /
--- 11. Cantón por ID
-CREATE OR REPLACE FUNCTION getCanton(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
+-- Función 11: Calcular el total de una orden de compra
+CREATE OR REPLACE FUNCTION FIDE_ORDEN_CALCULAR_TOTAL_FN (P_ID_ORDEN_COMPRA NUMBER)
+RETURN NUMBER
+IS
+    V_TOTAL NUMBER;
 BEGIN
-SELECT nombre INTO v_nombre FROM CANTON WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Cantón no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el cantón';
+    SELECT total INTO V_TOTAL
+    FROM FIDE_ORDEN_COMPRA_TB
+    WHERE id_orden_compra = P_ID_ORDEN_COMPRA;
+    RETURN V_TOTAL;
 END;
 /
--- 12. Distrito por ID
-CREATE OR REPLACE FUNCTION getDistrito(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
+-- Función 12: Obtener el proveedor de una orden de compra
+CREATE OR REPLACE FUNCTION FIDE_ORDEN_OBTENER_PROVEEDOR_FN (P_ID_ORDEN_COMPRA NUMBER)
+RETURN VARCHAR2
+IS
+    V_NOMBRE_PROVEEDOR VARCHAR2(100);
 BEGIN
-SELECT nombre INTO v_nombre FROM DISTRITO WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Distrito no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el distrito';
+    SELECT P.nombre INTO V_NOMBRE_PROVEEDOR
+    FROM FIDE_ORDEN_COMPRA_TB OC
+    INNER JOIN FIDE_PROVEEDOR_TB P ON OC.id_proveedor = P.id_proveedor
+    WHERE OC.id_orden_compra = P_ID_ORDEN_COMPRA;
+    RETURN V_NOMBRE_PROVEEDOR;
 END;
 /
--- 13. Unidad de medida por ID
-CREATE OR REPLACE FUNCTION getUnidadMedida(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
+-- Función 13: Verificar disponibilidad de stock
+CREATE OR REPLACE FUNCTION FIDE_PRODUCTO_STOCK_DISPONIBLE_FN (P_ID_PRODUCTO NUMBER, P_CANTIDAD NUMBER)
+RETURN VARCHAR2
+IS
+    V_STOCK NUMBER;
 BEGIN
-SELECT nombre INTO v_nombre FROM UNIDAD_MEDIDA WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Unidad de medida no encontrada';
-WHEN OTHERS THEN RETURN 'Error al obtener la unidad de medida';
+    V_STOCK := FIDE_PRODUCTO_OBTENER_STOCK_FN(P_ID_PRODUCTO);
+    IF V_STOCK >= P_CANTIDAD THEN
+        RETURN 'STOCK DISPONIBLE';
+    ELSE
+        RETURN 'STOCK INSUFICIENTE';
+    END IF;
 END;
 /
--- 14. Producto-insumo por ID
-CREATE OR REPLACE FUNCTION getProductoInsumo(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_producto_id NUMBER;
-v_insumo_id NUMBER;
-v_cantidad NUMBER;
+-- Función 14: Obtener el nombre de una categoría
+CREATE OR REPLACE FUNCTION FIDE_CATEGORIA_OBTENER_NOMBRE_FN (P_ID_CATEGORIA NUMBER)
+RETURN VARCHAR2
+IS
+    V_NOMBRE VARCHAR2(100);
 BEGIN
-SELECT producto_id, insumo_id, cantidad
-INTO v_producto_id, v_insumo_id, v_cantidad
-FROM PRODUCTO_INSUMO WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Producto: ' || v_producto_id || ', Insumo: ' || v_insumo_id || ', Cantidad: ' || v_cantidad;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Producto-Insumo no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el registro';
+    SELECT nombre INTO V_NOMBRE
+    FROM FIDE_CATEGORIA_TB
+    WHERE id_categoria = P_ID_CATEGORIA;
+    RETURN V_NOMBRE;
 END;
 /
--- 15. Estado de pedido por ID
-CREATE OR REPLACE FUNCTION getEstadoPedido(p_id IN NUMBER) RETURN VARCHAR2 IS
-v_nombre VARCHAR2(100);
+-- Función 15: Obtener el nombre de una unidad de medida
+CREATE OR REPLACE FUNCTION FIDE_UNIDAD_MEDIDA_OBTENER_NOMBRE_FN (P_ID_UNIDAD_MEDIDA NUMBER)
+RETURN VARCHAR2
+IS
+    V_NOMBRE VARCHAR2(100);
 BEGIN
-SELECT nombre INTO v_nombre FROM ESTADO_PEDIDO WHERE id = p_id;
-RETURN 'ID: ' || p_id || ', Nombre: ' || v_nombre;
-EXCEPTION
-WHEN NO_DATA_FOUND THEN RETURN 'Estado no encontrado';
-WHEN OTHERS THEN RETURN 'Error al obtener el estado';
+    SELECT nombre INTO V_NOMBRE
+    FROM FIDE_UNIDAD_MEDIDA_TB
+    WHERE id_unidad_medida = P_ID_UNIDAD_MEDIDA;
+    RETURN V_NOMBRE;
 END;
 /
