@@ -492,22 +492,31 @@ function obtenerCategorias(){
 }
 
 function conectarBaseDatos() {
-	$host = "localhost";
-	$db   = "botanero_ventas";
-	$user = "root";
-	$pass = "";
-	$charset = 'utf8mb4';
+    // Datos de conexión a Oracle
+    $host = 'localhost';    // Servidor
+    $port = '1521';         // Puerto por defecto de Oracle
+    $sid  = 'xe';           // SID (o servicio) de tu BD Oracle
+    $user = 'ADMINISTRADOR'; // Usuario
+    $pass = '123';          // Contraseña
+	$dsn = "oci:dbname=//$host:$port/$sid;charset=AL32UTF8"; 
+	
+    // DSN para PDO con Oracle (OCI)
+    // Sintaxis: oci:dbname=//[host]:[puerto]/[sid]
+    // charset se puede ajustar a AL32UTF8 u otro que uses
+    $dsn = "oci:dbname=//$host:$port/$sid;charset=AL32UTF8";
 
-	$options = [
-	    \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-	    \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_OBJ,
-	    \PDO::ATTR_EMULATE_PREPARES   => false,
-	];
-	$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-	try {
-	     $pdo = new \PDO($dsn, $user, $pass, $options);
-	     return $pdo;
-	} catch (\PDOException $e) {
-	     throw new \PDOException($e->getMessage(), (int)$e->getCode());
-	}
+    // Opciones recomendadas para PDO
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ];
+
+    try {
+        // Crear la instancia PDO con Oracle
+        $pdo = new PDO($dsn, $user, $pass, $options);
+        return $pdo;
+    } catch (PDOException $e) {
+        throw new PDOException($e->getMessage(), (int)$e->getCode());
+    }
 }
