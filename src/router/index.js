@@ -5,7 +5,6 @@ import Insumos from '../components/Insumos/Insumos'
 import Categorias from '../components/Categorias/Categorias'
 import RegistrarInsumo from '../components/Insumos/RegistrarInsumo'
 import EditarInsumo from '../components/Insumos/EditarInsumo'
-import Configurar from '../components/Configuracion/Configurar'
 import RealizarOrden from '../components/Ordenar/RealizarOrden'
 import Ordenar from '../components/Ordenar/Ordenar'
 import Usuarios from '../components/Usuarios/Usuarios'
@@ -30,11 +29,6 @@ export default new Router({
       path: '/insumos',
       name: 'Insumos',
       component: Insumos
-    },
-    {
-      path: '/configurar',
-      name: 'Configurar',
-      component: Configurar
     },
     {
       path: '/realizar-orden',

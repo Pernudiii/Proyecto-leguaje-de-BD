@@ -1,0 +1,8 @@
+{
+    "resultado": true,
+    "datos": {
+        "nombreUsuario": "Administrador",
+        "idUsuario": "4",
+        "idRol": "1"
+    }
+}

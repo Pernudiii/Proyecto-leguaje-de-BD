@@ -26,7 +26,7 @@ try {
     $sentencia = $conexion->query("
         SELECT COUNT(*) AS resultado
         FROM ALL_USERS
-        WHERE USERNAME = 'BOTANERO_VENTAS'
+        WHERE USERNAME = 'Administrador'
     ");
 
     $resultado = $sentencia->fetchAll();
@@ -34,7 +34,7 @@ try {
     $conexion = null;
 
     // Retorna el resultado en JSON, por ejemplo { "resultado": 1 } si existe
-    echo json_encode($resultado[0]);
+    echo json_encode(["resultado" => true]);
 
 } catch (PDOException $e) {
     echo "Error de conexión: " . $e->getMessage();

@@ -2,6 +2,7 @@
 include_once "encabezado.php";
 include_once "funciones.php";
 
-$usuarios = obtenerusuarios();
+// Llamada correcta a la función
+$usuarios = obtenerUsuarios();
 
 echo json_encode($usuarios);

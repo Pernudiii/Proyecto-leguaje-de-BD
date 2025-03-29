@@ -1,0 +1,8 @@
+stdClass Object
+(
+    [ID_USUARIO] => 4
+    [NOMBRE] => Administrador
+    [CORREO] => admin@kosburger.com
+    [CONTRASENA] => 123
+    [ID_ROL] => 1
+)

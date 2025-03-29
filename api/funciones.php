@@ -4,7 +4,8 @@ define('DIRECTORIO', './fotos/');
 
 function verificarTablas() {
     $bd = conectarBaseDatos();
-    $sentencia  = $bd->query("SELECT COUNT(*) AS resultado FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'botanero_ventas'");
+    // Verifica si existe el esquema (usuario) "ADMINSTRADOR" en Oracle.
+    $sentencia = $bd->query("SELECT COUNT(*) AS resultado FROM ALL_USERS WHERE USERNAME = 'ADMINISTRADOR'");
     return $sentencia->fetchAll();
 }
 
@@ -132,12 +133,26 @@ function obtenerVentasPorMeses($anio) {
 
 function obtenerVentasDiasSemana() {
     $bd = conectarBaseDatos();
-    $sentencia = $bd->query("SELECT DAYNAME(fecha) AS dia, DAYOFWEEK(fecha) AS numeroDia, SUM(total) AS totalVentas FROM ventas
-     WHERE YEARWEEK(fecha)=YEARWEEK(CURDATE())
-     GROUP BY dia 
-     ORDER BY fecha ASC");
-    return $sentencia->fetchAll();
+	$sql = "BEGIN FIDE_OBTENER_VENTAS_DIAS_SEMANA_SP(:p_resultado); END;";
+    $stmt = $bd->prepare($sql);
 
+    // Declaramos un cursor
+    $stmt->bindParam(':p_resultado', $cursor, PDO::PARAM_STMT);
+    $stmt->execute();
+
+    // Ejecutamos el cursor
+    oci_execute($cursor);
+
+    // Recogemos los datos del cursor
+    $datos = [];
+    while ($fila = oci_fetch_assoc($cursor)) {
+        $datos[] = $fila;
+    }
+
+    // Cerramos cursor
+    oci_free_statement($cursor);
+
+    return $datos;
 }
 
 function obtenerVentasPorUsuario($fechaInicio, $fechaFin){
@@ -304,66 +319,137 @@ function ocuparMesa($mesa){
 
 function cambiarPassword($idUsuario, $password) {
     $bd = conectarBaseDatos();
+    // Generamos el hash de la contraseña
     $passwordCod = password_hash($password, PASSWORD_DEFAULT);
-    $sentencia = $bd->prepare("UPDATE usuarios SET password = ? WHERE id = ?");
-    return $sentencia->execute([$passwordCod, $idUsuario]);
+    
+    // Preparamos un bloque PL/SQL que llama al procedimiento
+    $sql = "BEGIN FIDE_USUARIO_CAMBIAR_PASSWORD_SP(:p_id_usuario, :p_password); END;";
+    $stmt = $bd->prepare($sql);
+    
+    // Vinculamos los parámetros de entrada
+    $stmt->bindParam(':p_id_usuario', $idUsuario, PDO::PARAM_INT);
+    $stmt->bindParam(':p_password', $passwordCod, PDO::PARAM_STR);
+    
+    // Ejecutamos el bloque y devolvemos el resultado
+    return $stmt->execute();
 }
 
-function verificarPassword($password, $idUsuario){
+function verificarPassword($correo, $password) {
     $bd = conectarBaseDatos();
-    $sentencia = $bd->prepare("SELECT password FROM usuarios  WHERE id = ?");
-    $sentencia->execute([$idUsuario]);
-    $usuario = $sentencia->fetchObject();
-    if ($usuario === FALSE) return false;
-    elseif($sentencia->rowCount() == 1) {
-        $passwordVerifica = password_verify($password, $usuario->password);
-        if($usuario && $passwordVerifica) {return true;}
-        else{return false;}
-    } 
+    $sql = "BEGIN FIDE_USUARIO_VERIFICAR_PASSWORD_SP(:p_correo, :p_contrasena, :p_resultado); END;";
+    $stmt = $bd->prepare($sql);
+
+    $stmt->bindParam(":p_correo", $correo, PDO::PARAM_STR);
+    $stmt->bindParam(":p_contrasena", $password, PDO::PARAM_STR);
+
+    $resultado = "";
+    $stmt->bindParam(":p_resultado", $resultado, PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 20);
+
+    $stmt->execute();
+
+    // TEMPORAL: ver qué devuelve
+    file_put_contents("debug_resultado.txt", "Resultado SP: '$resultado'");
+
+    return (trim($resultado) === "VALIDO");
 }
+
+
 
 function iniciarSesion($correo, $password) {
     $bd = conectarBaseDatos();
-    $sentencia = $bd->prepare("SELECT * FROM usuarios WHERE correo = ?");
-    $sentencia->execute([$correo]);
-    $usuario = $sentencia->fetchObject();
-    if ($usuario === FALSE) return false;
-    elseif($sentencia->rowCount() == 1) {
-        $passwordVerifica = password_verify($password, $usuario->password);
-        if($usuario && $passwordVerifica) {return $usuario;}
-        else{return false;}
+    $sql = "SELECT id_usuario, nombre, correo, contrasena, id_rol 
+            FROM FIDE_USUARIO_TB 
+            WHERE correo = :correo";
+    $stmt = $bd->prepare($sql);
+    $stmt->bindParam(":correo", $correo, PDO::PARAM_STR);
+    $stmt->execute();
+    $usuario = $stmt->fetch(PDO::FETCH_OBJ);
+
+    if ($usuario === false) {
+        return false;
+    }
+
+	// 🛠️ DEBUG: Guardar lo que devuelve la consulta SQL antes de validar password
+    file_put_contents("debug_usuario.txt", print_r($usuario, true));
+    
+    // Usamos la función verificarPassword para validar la contraseña
+    if (verificarPassword($correo, $password)) {
+        return $usuario;
+    } else {
+        return false;
     }
 }
 
+
+
 function eliminarUsuario($idUsuario){
-	$bd = conectarBaseDatos();
-    $sentencia = $bd->prepare("DELETE FROM usuarios WHERE id = ?");
-	return $sentencia->execute([$idUsuario]);
+    $bd = conectarBaseDatos();
+    $sql = "BEGIN FIDE_USUARIO_ELIMINAR_SP(:p_id); END;";
+    $stmt = $bd->prepare($sql);
+    $stmt->bindParam(":p_id", $idUsuario, PDO::PARAM_INT);
+    return $stmt->execute();
 }
 
 function editarUsuario($usuario){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("UPDATE usuarios SET correo = ?, nombre = ?, telefono = ? WHERE id = ?");
-	return $sentencia->execute([$usuario->correo, $usuario->nombre, $usuario->telefono, $usuario->id]);	
+    $bd = conectarBaseDatos();
+    $sql = "BEGIN FIDE_USUARIO_ACTUALIZAR_SP(:p_id_usuario, :p_nombre, :p_correo, :p_contrasena, :p_id_rol); END;";
+    $stmt = $bd->prepare($sql);
+    
+    $stmt->bindParam(":p_id_usuario", $usuario->id, PDO::PARAM_INT);
+    $stmt->bindParam(":p_nombre", $usuario->nombre, PDO::PARAM_STR);
+    $stmt->bindParam(":p_correo", $usuario->correo, PDO::PARAM_STR);
+    $stmt->bindParam(":p_contrasena", $usuario->contrasena, PDO::PARAM_STR);
+    $stmt->bindParam(":p_id_rol", $usuario->id_rol, PDO::PARAM_INT);
+
+    return $stmt->execute();
 }
 
-function obtenerUsuarioPorId($idUsuario){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("SELECT id, correo, nombre, telefono FROM usuarios WHERE id = ?");
-	$sentencia->execute([$idUsuario]);
-	return $sentencia->fetchObject();
+function obtenerUsuarioPorId($idUsuario) {
+    $bd = conectarBaseDatos();
+    $sql = "BEGIN FIDE_USUARIO_OBTENER_POR_ID_SP(:p_id, :p_resultado); END;";
+    $stmt = $bd->prepare($sql);
+
+    // Vincular el parámetro de entrada
+    $stmt->bindParam(':p_id', $idUsuario, PDO::PARAM_INT);
+
+    // Vincular el parámetro de salida como un cursor
+    $stmt->bindParam(':p_resultado', $cursor, PDO::PARAM_STMT);
+
+    // Ejecutar la sentencia
+    $stmt->execute();
+
+    // Obtener el conjunto de resultados del cursor
+    $cursor->execute();
+    $usuario = $cursor->fetch(PDO::FETCH_OBJ);
+
+    return $usuario;
 }
 
-function obtenerUsuarios(){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->query("SELECT id, correo, nombre, telefono FROM usuarios");
-	return $sentencia->fetchAll();
+function obtenerUsuarios() {
+    $bd = conectarBaseDatos();
+    $sql = "BEGIN FIDE_USUARIO_OBTENER_TODOS_SP(:p_resultado); END;";
+    $stmt = $bd->prepare($sql);
+
+    $stmt->bindParam(':p_resultado', $cursor, PDO::PARAM_STMT);
+    $stmt->execute();
+    $cursor->execute();
+
+    return $cursor->fetchAll(PDO::FETCH_OBJ);
 }
 
-function registrarUsuario($usuario){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("INSERT INTO usuarios (correo, nombre, telefono, password) VALUES(?,?,?,?)");
-	return $sentencia->execute([$usuario->correo, $usuario->nombre, $usuario->telefono, $usuario->password]);	
+
+function registrarUsuario($usuario) {
+    $bd = conectarBaseDatos();
+    $sql = "BEGIN FIDE_USUARIO_INSERTAR_SP(:p_id_usuario, :p_nombre, :p_correo, :p_contrasena, :p_id_rol); END;";
+    $stmt = $bd->prepare($sql);
+
+    $stmt->bindParam(':p_id_usuario', $usuario->id, PDO::PARAM_INT);
+    $stmt->bindParam(':p_nombre', $usuario->nombre, PDO::PARAM_STR);
+    $stmt->bindParam(':p_correo', $usuario->correo, PDO::PARAM_STR);
+    $stmt->bindParam(':p_contrasena', $usuario->password, PDO::PARAM_STR);
+    $stmt->bindParam(':p_id_rol', $usuario->id_rol, PDO::PARAM_INT);
+
+    return $stmt->execute();
 }
 
 function obtenerInsumosPorNombre($insumo){
@@ -373,24 +459,6 @@ function obtenerInsumosPorNombre($insumo){
 	LEFT JOIN categorias ON categorias.id = insumos.categoria 
 	WHERE insumos.nombre LIKE ? ");
 	$sentencia->execute(['%'.$insumo.'%']);
-	return $sentencia->fetchAll();
-}
-
-function actualizarInformacionLocal($datos){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("UPDATE informacion_negocio SET nombre = ?, telefono = ?, numeroMesas = ?, logo = ?");
-	return $sentencia->execute([$datos->nombre, $datos->telefono, $datos->numeroMesas, $datos->logo]);
-}
-
-function registrarInformacionLocal($datos){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("INSERT INTO informacion_negocio (nombre, telefono, numeroMesas, logo) vALUES (?,?,?,?)");
-	return $sentencia->execute([$datos->nombre, $datos->telefono, $datos->numeroMesas, $datos->logo]);
-}
-
-function obtenerInformacionLocal(){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->query("SELECT * FROM informacion_negocio");
 	return $sentencia->fetchAll();
 }
 
@@ -492,31 +560,24 @@ function obtenerCategorias(){
 }
 
 function conectarBaseDatos() {
-    // Datos de conexión a Oracle
-    $host = 'localhost';    // Servidor
-    $port = '1521';         // Puerto por defecto de Oracle
-    $sid  = 'xe';           // SID (o servicio) de tu BD Oracle
-    $user = 'ADMINISTRADOR'; // Usuario
-    $pass = '123';          // Contraseña
-	$dsn = "oci:dbname=//$host:$port/$sid;charset=AL32UTF8"; 
-	
+    $host = "localhost";
+    $port = "1521";      // Puerto por defecto de Oracle
+    $sid  = "xe";        // O SERVICE_NAME; ajusta según tu entorno
+    $user = "ADMINISTRADOR";  // Usuario de conexión
+    $pass = "123";       // Contraseña
+
     // DSN para PDO con Oracle (OCI)
-    // Sintaxis: oci:dbname=//[host]:[puerto]/[sid]
-    // charset se puede ajustar a AL32UTF8 u otro que uses
     $dsn = "oci:dbname=//$host:$port/$sid;charset=AL32UTF8";
 
-    // Opciones recomendadas para PDO
     $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
         PDO::ATTR_EMULATE_PREPARES   => false,
     ];
-
     try {
-        // Crear la instancia PDO con Oracle
-        $pdo = new PDO($dsn, $user, $pass, $options);
-        return $pdo;
+         $pdo = new PDO($dsn, $user, $pass, $options);
+         return $pdo;
     } catch (PDOException $e) {
-        throw new PDOException($e->getMessage(), (int)$e->getCode());
+         throw new PDOException($e->getMessage(), (int)$e->getCode());
     }
 }

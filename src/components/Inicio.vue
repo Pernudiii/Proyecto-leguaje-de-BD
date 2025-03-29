@@ -250,7 +250,7 @@ export default ({
     mounted(){
         this.filtros.anio = this.anioSeleccionado
         this.filtros.limite = this.limiteSeleccionado
-        this.obtenerDatos()  
+        //this.obtenerDatos()  //
         this.llenarListaAnios()
     },
 

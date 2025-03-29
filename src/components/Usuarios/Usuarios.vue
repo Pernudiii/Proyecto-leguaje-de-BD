@@ -6,7 +6,6 @@
                 icon="account-group"
                 size="is-large"
                 type="is-primary"
-                tag="router-link"
                 to="/registrar-usuario">
             </b-icon>
             Usuarios
@@ -46,17 +45,22 @@
             aria-page-label="Page"
             aria-current-label="Current page">
 
-            <b-table-column field="correo" label="Correo" sortable v-slot="props">
-                {{ props.row.correo }}
+            <b-table-column field="id_usuario" label="ID" searchable sortable v-slot="props">
+                {{ props.row.id_usuario }}
             </b-table-column>
 
             <b-table-column field="nombre" label="Nombre" searchable sortable v-slot="props">
                 {{ props.row.nombre }}
             </b-table-column>
 
-            <b-table-column field="telefono" label="Teléfono" searchable sortable v-slot="props">
-                {{ props.row.telefono }}
+            <b-table-column field="correo" label="Correo" sortable v-slot="props">
+                {{ props.row.correo }}
             </b-table-column>
+
+            <b-table-column field="id_rol" label="Rol" sortable v-slot="props">
+            {{ props.row.id_rol == 1 ? 'Administrador' : 'Asistente' }}
+            </b-table-column>
+
 
             <b-table-column field="acciones" label="Acciones"  v-slot="props">
                 <div class="field is-grouped">
@@ -64,7 +68,7 @@
                         <b-button 
                         type="is-danger"
                         icon-left="delete"
-                        @click="eliminar(props.row)">
+                        @click="eliminar(props.row.id_usuario)">
                             Eliminar
                         </b-button>
                     </p>

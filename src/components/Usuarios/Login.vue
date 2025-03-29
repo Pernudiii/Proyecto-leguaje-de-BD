@@ -5,7 +5,7 @@
            
             <div class="container">
         <p class="title is-1 has-text-weight-bold has-text-white has-text-centered titulo">
-            Sistema para restaurantes o venta de comida <br>
+            Sistema KO's Burger Gestión <br>
             <b-icon
                 icon="account"
                 size="is-large"
@@ -81,23 +81,23 @@ export default {
 
             HttpService.obtenerConDatos(payload, "iniciar_sesion.php")
             .then(log => {
-                if(log.resultado === "cambia"){
-                   this.$buefy.toast.open({
-                        message: 'Datos correctos. Debes cambiar tu contraseña',
-                        type: 'is-info'
-                    })
-                    this.$emit("logeado", log)
-                    this.cargando = false
-                    return 
-                }
+                console.log("Login response desde PHP:", log); // 👈 Verifica la respuesta
+                console.log("log.resultado:", log.resultado);
+                console.log("log.datos:", log.datos);
 
-                if(log.resultado) {
+                if (log.resultado) {
                     this.$buefy.toast.open({
                         message: 'Datos correctos. Bienvenido',
                         type: 'is-success'
                     })
-                    this.$emit("logeado", log)
-                    this.cargando = false
+
+                    localStorage.setItem('logeado', "true");
+                    console.log("localStorage después del login:", localStorage.getItem('logeado'));
+
+                    localStorage.setItem('nombreUsuario', log.datos.nombreUsuario);
+                    localStorage.setItem('idUsuario', log.datos.idUsuario);
+                    this.$emit("logeado", log);
+                    this.cargando = false;
                 } else {
                     this.$buefy.toast.open({
                         message: 'Datos incorrectos. Verifica tu información',
@@ -116,8 +116,7 @@ export default {
 
  @import url('https://fonts.googleapis.com/css?family=Amaranth');
 .fondo {
-background-color: #54008C;
-background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1000'%3E%3Cg fill-opacity='0.83'%3E%3Ccircle fill='%2354008C' cx='50' cy='0' r='50'/%3E%3Cg fill='%235b0092' %3E%3Ccircle cx='0' cy='50' r='50'/%3E%3Ccircle cx='100' cy='50' r='50'/%3E%3C/g%3E%3Ccircle fill='%23620098' cx='50' cy='100' r='50'/%3E%3Cg fill='%2369009d' %3E%3Ccircle cx='0' cy='150' r='50'/%3E%3Ccircle cx='100' cy='150' r='50'/%3E%3C/g%3E%3Ccircle fill='%236f00a3' cx='50' cy='200' r='50'/%3E%3Cg fill='%237600a9' %3E%3Ccircle cx='0' cy='250' r='50'/%3E%3Ccircle cx='100' cy='250' r='50'/%3E%3C/g%3E%3Ccircle fill='%237d00af' cx='50' cy='300' r='50'/%3E%3Cg fill='%238400b4' %3E%3Ccircle cx='0' cy='350' r='50'/%3E%3Ccircle cx='100' cy='350' r='50'/%3E%3C/g%3E%3Ccircle fill='%238b00ba' cx='50' cy='400' r='50'/%3E%3Cg fill='%239200c0' %3E%3Ccircle cx='0' cy='450' r='50'/%3E%3Ccircle cx='100' cy='450' r='50'/%3E%3C/g%3E%3Ccircle fill='%239900c6' cx='50' cy='500' r='50'/%3E%3Cg fill='%239f00cb' %3E%3Ccircle cx='0' cy='550' r='50'/%3E%3Ccircle cx='100' cy='550' r='50'/%3E%3C/g%3E%3Ccircle fill='%23a600d1' cx='50' cy='600' r='50'/%3E%3Cg fill='%23ad00d7' %3E%3Ccircle cx='0' cy='650' r='50'/%3E%3Ccircle cx='100' cy='650' r='50'/%3E%3C/g%3E%3Ccircle fill='%23b400dd' cx='50' cy='700' r='50'/%3E%3Cg fill='%23bb00e2' %3E%3Ccircle cx='0' cy='750' r='50'/%3E%3Ccircle cx='100' cy='750' r='50'/%3E%3C/g%3E%3Ccircle fill='%23c200e8' cx='50' cy='800' r='50'/%3E%3Cg fill='%23c800ee' %3E%3Ccircle cx='0' cy='850' r='50'/%3E%3Ccircle cx='100' cy='850' r='50'/%3E%3C/g%3E%3Ccircle fill='%23cf00f4' cx='50' cy='900' r='50'/%3E%3Cg fill='%23d600f9' %3E%3Ccircle cx='0' cy='950' r='50'/%3E%3Ccircle cx='100' cy='950' r='50'/%3E%3C/g%3E%3Ccircle fill='%23D0F' cx='50' cy='1000' r='50'/%3E%3C/g%3E%3C/svg%3E");
+background-color: #8f0202;
 background-attachment: fixed;
 background-size: contain;
 }

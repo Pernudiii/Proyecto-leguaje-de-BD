@@ -1,9 +1,7 @@
 <template>
   <div id="app">
-    <configuracion-inicial v-if="configurar"/>
-    <login @logeado="onLog" v-if="!logeado && !configurar"></login>
-    <cambiar-password v-if="cambiarPassword"></cambiar-password>
-    <div v-if="logeado && !cambiarPassword">
+    <login @logeado="onLog" v-if="!logeado"></login>
+    <div v-if="logeado">
       <encabezado @cerrar="onClose"/> 
       <div class="container">
         <router-view/>
@@ -15,28 +13,31 @@
 
 <script>
 import Login from './components/Usuarios/Login.vue'
-import CambiarPassword from './components/Usuarios/CambiarPassword.vue'
-import ConfiguracionInicial from './components/Configuracion/ConfiguracionInicial.vue'
 import Encabezado from './components/Encabezado.vue'
 import Pie from './components/Pie.vue'
 import HttpService from './Servicios/HttpService'
 
 export default {
-  components: { Encabezado, Pie, Login, CambiarPassword, ConfiguracionInicial },
+  components: { Encabezado, Pie, Login},
   name: 'App',
 
   data: ()=> ({
     logeado: false,
     datos: "",
-    cambiarPassword: false,
-    configurar: false
   }),
 
   mounted(){
     this.verificarInformacion()
     let logeado = this.verificarSesion()
+    console.log("[App.vue] ¿Estaba logeado desde localStorage?", logeado);
+
     if(logeado) {
-      this.logeado = true
+      this.logeado = true;
+      console.log("[App.vue] Estado actualizado: logeado = true");
+      console.log("Usuario:", localStorage.getItem("nombreUsuario"));
+      console.log("ID Usuario:", localStorage.getItem("idUsuario"));
+    } else {
+      console.log("[App.vue] No hay sesión activa en localStorage");
     }
   },
 
@@ -55,29 +56,28 @@ export default {
     },
 
     verificarSesion(){
-      let logeado = localStorage.getItem('logeado')
-      if(logeado) {
-        return logeado
-      }
-      return false
+      return localStorage.getItem('logeado') === "true"
     },
 
     onLog(logeado){
-      if(logeado.resultado === "cambia"){
-        this.cambiarPassword = true
-        this.logeado = true
-        localStorage.setItem('nombreUsuario', logeado.datos.nombreUsuario)
-        localStorage.setItem('idUsuario', logeado.datos.idUsuario)
-        return
-      }
 
-      if(logeado.resultado){
+      console.log("[App.vue] Recibido en onLog:", logeado);
+      console.log("logeado.resultado:", logeado.resultado);
+      console.log("logeado.datos:", logeado.datos);
+
+      if (logeado.resultado == true) {
         this.logeado = true
         localStorage.setItem('logeado', true)
         localStorage.setItem('nombreUsuario', logeado.datos.nombreUsuario)
         localStorage.setItem('idUsuario', logeado.datos.idUsuario)
+        console.log("🗂 Guardado en localStorage");
+      } else {
+        console.log("Credenciales incorrectas en App.vue");
+        this.$buefy.toast.open({
+          message: 'Credenciales incorrectas',
+          type: 'is-danger'
+        });
       }
-      
     },
 
     onClose(logeado){

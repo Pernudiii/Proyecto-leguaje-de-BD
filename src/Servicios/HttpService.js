@@ -15,8 +15,14 @@ const HttpService = {
             method: "post",
             body: JSON.stringify(datos),
         });
-        let resultado = await respuesta.json()
-        return resultado
+    
+        const texto = await respuesta.text();  // leer respuesta cruda
+        try {
+            return JSON.parse(texto);  // intentar parsear como JSON
+        } catch (e) {
+            console.error(`Error parseando JSON desde ${ruta}:`, texto);
+            throw e;
+        }
     },
 
 

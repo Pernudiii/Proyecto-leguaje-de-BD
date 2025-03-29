@@ -83,6 +83,19 @@ DELETE FROM FIDE_USUARIO_TB
 WHERE id_usuario = P_ID;
 END;
 /
+
+-- Obtener todos los usuarios
+CREATE OR REPLACE PROCEDURE FIDE_USUARIO_OBTENER_TODOS_SP (
+    P_RESULTADO OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN P_RESULTADO FOR
+    SELECT id_usuario, nombre, correo, id_rol
+    FROM FIDE_USUARIO_TB;
+END;
+/
+
 -- Obtener un usuario por ID
 CREATE OR REPLACE PROCEDURE FIDE_USUARIO_OBTENER_POR_ID_SP (
 P_ID IN NUMBER,
@@ -1066,6 +1079,24 @@ CREATE OR REPLACE PROCEDURE FIDE_MESA_INSERT_SP (
 BEGIN
     INSERT INTO FIDE_MESA_TB (ID_MESA, NUMERO_MESA, CAPACIDAD, UBICACION)
     VALUES (P_ID_MESA, P_NUMERO_MESA, P_CAPACIDAD, P_UBICACION);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE FIDE_OBTENER_VENTAS_DIAS_SEMANA_SP (
+    p_resultado OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+    OPEN p_resultado FOR
+        SELECT 
+            TO_CHAR(fecha_pedido, 'Day') AS dia,
+            TO_NUMBER(TO_CHAR(fecha_pedido, 'D')) AS numeroDia,
+            SUM(total) AS totalVentas
+        FROM FIDE_PEDIDO_TB
+        WHERE fecha_pedido >= TRUNC(SYSDATE, 'IW')
+          AND fecha_pedido < TRUNC(SYSDATE + 7, 'IW')
+        GROUP BY TO_CHAR(fecha_pedido, 'Day'), TO_CHAR(fecha_pedido, 'D')
+        ORDER BY TO_NUMBER(TO_CHAR(fecha_pedido, 'D'));
 END;
 /
 
