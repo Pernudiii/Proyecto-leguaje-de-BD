@@ -222,7 +222,7 @@ function registrarInsumosVenta($insumos, $idVenta){
 
 function obtenerMesas(){
 	$mesas = [];
-	$numeroMesas = obtenerInformacionLocal()[0]->numeroMesas;
+	$numeroMesas =[0]->numeroMesas;
 	for($i = 1; $i <= $numeroMesas; $i++){
 		array_push($mesas, leerArchivo($i)); 
 	}
@@ -317,20 +317,12 @@ function ocuparMesa($mesa){
 	return true;
 }
 
-function cambiarPassword($idUsuario, $password) {
+function cambiarPassword($idUsuario, $nuevaContrasena) {
     $bd = conectarBaseDatos();
-    // Generamos el hash de la contraseña
-    $passwordCod = password_hash($password, PASSWORD_DEFAULT);
-    
-    // Preparamos un bloque PL/SQL que llama al procedimiento
-    $sql = "BEGIN FIDE_USUARIO_CAMBIAR_PASSWORD_SP(:p_id_usuario, :p_password); END;";
+    $sql = "BEGIN FIDE_USUARIO_CAMBIAR_PASSWORD_SP(:p_id_usuario, :p_nueva_contrasena); END;";
     $stmt = $bd->prepare($sql);
-    
-    // Vinculamos los parámetros de entrada
     $stmt->bindParam(':p_id_usuario', $idUsuario, PDO::PARAM_INT);
-    $stmt->bindParam(':p_password', $passwordCod, PDO::PARAM_STR);
-    
-    // Ejecutamos el bloque y devolvemos el resultado
+    $stmt->bindParam(':p_nueva_contrasena', $nuevaContrasena, PDO::PARAM_STR);
     return $stmt->execute();
 }
 
@@ -426,24 +418,44 @@ function obtenerUsuarioPorId($idUsuario) {
 }
 
 function obtenerUsuarios() {
-    $bd = conectarBaseDatos();
-    $sql = "BEGIN FIDE_USUARIO_OBTENER_TODOS_SP(:p_resultado); END;";
-    $stmt = $bd->prepare($sql);
+    try {
+        $bd = conectarBaseDatos();
 
-    $stmt->bindParam(':p_resultado', $cursor, PDO::PARAM_STMT);
-    $stmt->execute();
-    $cursor->execute();
+        // Creamos un nuevo cursor
+        $cursor = $bd->prepare("SELECT 1 FROM DUAL"); // Dummy para inicializar
 
-    return $cursor->fetchAll(PDO::FETCH_OBJ);
+        // Preparamos el procedimiento
+        $sql = "BEGIN FIDE_USUARIO_OBTENER_TODOS_SP(:p_resultado); END;";
+        $stmt = $bd->prepare($sql);
+
+        // Bind del cursor como salida
+        $stmt->bindParam(':p_resultado', $cursor, PDO::PARAM_STMT);
+
+        // Ejecutamos ambos
+        $stmt->execute();
+        $cursor->execute();
+
+        $resultado = $cursor->fetchAll(PDO::FETCH_OBJ);
+        return $resultado;
+
+    } catch (PDOException $e) {
+        file_put_contents("log_error_usuarios.txt", "Error al obtener usuarios: " . $e->getMessage());
+        return [];
+    }
 }
+
 
 
 function registrarUsuario($usuario) {
     $bd = conectarBaseDatos();
+
+    $queryId = $bd->query("SELECT NVL(MAX(id_usuario), 0) + 1 AS nuevo_id FROM FIDE_USUARIO_TB");
+    $nuevoId = $queryId->fetch(PDO::FETCH_OBJ)->NUEVO_ID;
+
     $sql = "BEGIN FIDE_USUARIO_INSERTAR_SP(:p_id_usuario, :p_nombre, :p_correo, :p_contrasena, :p_id_rol); END;";
     $stmt = $bd->prepare($sql);
 
-    $stmt->bindParam(':p_id_usuario', $usuario->id, PDO::PARAM_INT);
+    $stmt->bindParam(':p_id_usuario', $nuevoId, PDO::PARAM_INT);
     $stmt->bindParam(':p_nombre', $usuario->nombre, PDO::PARAM_STR);
     $stmt->bindParam(':p_correo', $usuario->correo, PDO::PARAM_STR);
     $stmt->bindParam(':p_contrasena', $usuario->password, PDO::PARAM_STR);

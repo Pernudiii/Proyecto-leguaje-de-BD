@@ -81,11 +81,11 @@ export default {
 
             HttpService.obtenerConDatos(payload, "iniciar_sesion.php")
             .then(log => {
-                console.log("Login response desde PHP:", log); // 👈 Verifica la respuesta
+                console.log("Login response desde PHP:", log); 
                 console.log("log.resultado:", log.resultado);
                 console.log("log.datos:", log.datos);
 
-                if (log.resultado) {
+                if (log.resultado ) {
                     this.$buefy.toast.open({
                         message: 'Datos correctos. Bienvenido',
                         type: 'is-success'

@@ -3,20 +3,25 @@
          <ul v-if="errores.length > 0">
             <li class="has-text-danger has-text-centered" v-for="error in errores" :key="error">{{ error }}</li>
         </ul>
-        <b-field label="Correo electrónico" >
-            <b-input type="email" placeholder="Correo del usuario" v-model="usuario.correo"></b-input>
-        </b-field>
-        <b-field label="Nombre" >
-            <b-input type="text" placeholder="Nombre del usuario" v-model="usuario.nombre"></b-input>
-        </b-field>
-        <b-field label="Teléfono" >
-            <b-input type="text" placeholder="Teléfono del usuario" v-model="usuario.telefono"></b-input>
+        <b-field label="Correo electrónico">
+            <b-input v-model="usuario.correo" placeholder="Correo del usuario"></b-input>
         </b-field>
 
-        <div class="has-text-centered">
-            <b-button type="is-success" size="is-large" icon-left="check" @click="registrar">Registrar</b-button>
-        </div>
-    </section>
+        <b-field label="Nombre">
+            <b-input v-model="usuario.nombre" placeholder="Nombre del usuario"></b-input>
+        </b-field>
+
+        <b-field label="Rol">
+            <b-select v-model="usuario.id_rol" placeholder="Selecciona un rol">
+            <option :value="1">Administrador</option>
+            <option :value="2">Asistente</option>
+        </b-select>
+        </b-field>
+
+    <b-button type="is-success" size="is-large" icon-left="check" @click="registrar">
+      Registrar
+    </b-button>
+  </section>
 </template>
 <script>
 import Utiles from '../../Servicios/Utiles'
@@ -34,7 +39,7 @@ export default ({
             let datos = {
                 correo: this.usuario.correo,
                 nombre: this.usuario.nombre,
-                telefono: this.usuario.telefono
+                
             }
             this.errores = Utiles.validar(datos)
             if(this.errores.length > 0) return

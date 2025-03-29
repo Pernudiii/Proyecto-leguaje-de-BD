@@ -58,7 +58,7 @@
             </b-table-column>
 
             <b-table-column field="id_rol" label="Rol" sortable v-slot="props">
-            {{ props.row.id_rol == 1 ? 'Administrador' : 'Asistente' }}
+                {{ props.row.id_rol == 1 ? 'Administrador' : 'Asistente' }}
             </b-table-column>
 
 
@@ -76,7 +76,7 @@
                         <b-button 
                         type="is-info"
                         icon-left="pen"
-                        @click="editar(props.row.id)">
+                        @click="editar(props.row.id_usuario)">
                             Editar
                         </b-button>
                     </p>
@@ -111,9 +111,9 @@ export default {
     },
 
     methods: {
-        eliminar(usuario){
+        eliminar(idusuario){
             this.$buefy.dialog.confirm({
-                title: 'Eliminar el usuario ' + usuario.nombre,
+                title: 'Eliminar el usuario con ID ' + idusuario,
                 message: '¿Seguro que deseas eliminar el usuario? Esta acción no se puede deshacer',
                 confirmText: 'Sí, eliminar',
                 cancelText: 'No, salir',
@@ -143,9 +143,14 @@ export default {
             this.cargando = true
             HttpService.obtener("obtener_usuarios.php")
             .then(resultado=> {
+                console.log("Usuarios recibidos:", resultado);
                 this.usuarios = resultado
                 this.cargando = false
             })
+            .catch(error => {
+            console.error("Error obteniendo usuarios:", error)
+            this.cargando = false
+        })
         }   
     }
 }

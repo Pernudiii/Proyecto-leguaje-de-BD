@@ -45,11 +45,6 @@
                 Ventas
             </b-navbar-item>
             
-            <b-navbar-item tag="router-link" :to="{ path: '/configurar' }">
-                <b-icon icon="application-cog-outline"></b-icon>
-                <span></span>
-                Configurar
-            </b-navbar-item>
         </template>
 
         <template #end>

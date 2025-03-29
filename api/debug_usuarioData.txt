@@ -1,6 +1,6 @@
 Array
 (
-    [nombreUsuario] => Administrador
-    [idUsuario] => 4
+    [nombreUsuario] => Valeria Arias
+    [idUsuario] => 5
     [idRol] => 1
 )
