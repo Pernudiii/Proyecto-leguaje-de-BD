@@ -374,78 +374,350 @@ function iniciarSesion($correo, $password) {
 
 
 
-function eliminarUsuario($idUsuario){
-    $bd = conectarBaseDatos();
-    $sql = "BEGIN FIDE_USUARIO_ELIMINAR_SP(:p_id); END;";
-    $stmt = $bd->prepare($sql);
-    $stmt->bindParam(":p_id", $idUsuario, PDO::PARAM_INT);
-    return $stmt->execute();
-}
+function eliminarUsuario(int $idUsuario) { // Asegura que recibe un entero
+    $host = "localhost"; $port = "1521"; $sid = "xe";
+    $user = "ADMINISTRADOR"; $pass = "123"; $charset = 'AL32UTF8';
+    $tns = "//$host:$port/$sid";
 
-function editarUsuario($usuario){
-    $bd = conectarBaseDatos();
-    $sql = "BEGIN FIDE_USUARIO_ACTUALIZAR_SP(:p_id_usuario, :p_nombre, :p_correo, :p_contrasena, :p_id_rol); END;";
-    $stmt = $bd->prepare($sql);
-    
-    $stmt->bindParam(":p_id_usuario", $usuario->id, PDO::PARAM_INT);
-    $stmt->bindParam(":p_nombre", $usuario->nombre, PDO::PARAM_STR);
-    $stmt->bindParam(":p_correo", $usuario->correo, PDO::PARAM_STR);
-    $stmt->bindParam(":p_contrasena", $usuario->contrasena, PDO::PARAM_STR);
-    $stmt->bindParam(":p_id_rol", $usuario->id_rol, PDO::PARAM_INT);
+    $conn = null; $stid = null;
+    $exito = false;
 
-    return $stmt->execute();
-}
+    // Validar ID positivo (opcional pero bueno)
+    if ($idUsuario <= 0) {
+        error_log("Intento de eliminar usuario con ID inválido: " . $idUsuario);
+        return false;
+    }
 
-function obtenerUsuarioPorId($idUsuario) {
-    $bd = conectarBaseDatos();
-    $sql = "BEGIN FIDE_USUARIO_OBTENER_POR_ID_SP(:p_id, :p_resultado); END;";
-    $stmt = $bd->prepare($sql);
-
-    // Vincular el parámetro de entrada
-    $stmt->bindParam(':p_id', $idUsuario, PDO::PARAM_INT);
-
-    // Vincular el parámetro de salida como un cursor
-    $stmt->bindParam(':p_resultado', $cursor, PDO::PARAM_STMT);
-
-    // Ejecutar la sentencia
-    $stmt->execute();
-
-    // Obtener el conjunto de resultados del cursor
-    $cursor->execute();
-    $usuario = $cursor->fetch(PDO::FETCH_OBJ);
-
-    return $usuario;
-}
-
-function obtenerUsuarios() {
     try {
-        $bd = conectarBaseDatos();
+        $conn = oci_connect($user, $pass, $tns, $charset);
+        if (!$conn) throw new Exception("Error OCI8 al conectar (eliminar): " . oci_error()['message']);
+        error_log("OCI8 [eliminarUsuario ID:{$idUsuario}]: Conexión OK.");
 
-        // Creamos un nuevo cursor
-        $cursor = $bd->prepare("SELECT 1 FROM DUAL"); // Dummy para inicializar
+        // Llamada al SP con 1 parámetro :p_id (asegúrate que tu SP lo use)
+        $sql = "BEGIN FIDE_USUARIO_ELIMINAR_SP(:p_id); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("Error OCI8 al parsear SP (eliminar): " . oci_error($conn)['message']);
 
-        // Preparamos el procedimiento
-        $sql = "BEGIN FIDE_USUARIO_OBTENER_TODOS_SP(:p_resultado); END;";
-        $stmt = $bd->prepare($sql);
+        // Bind del parámetro de ENTRADA :p_id
+        oci_bind_by_name($stid, ":p_id", $idUsuario, -1, SQLT_INT); // Bindea el entero
 
-        // Bind del cursor como salida
-        $stmt->bindParam(':p_resultado', $cursor, PDO::PARAM_STMT);
+        // Ejecuta y confirma (el SP ya hace COMMIT)
+        $exito = oci_execute($stid, OCI_COMMIT_ON_SUCCESS);
 
-        // Ejecutamos ambos
-        $stmt->execute();
-        $cursor->execute();
+        if (!$exito) {
+             $e = oci_error($stid);
+             error_log("Error OCI8 al ejecutar SP (eliminar): " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+        } else {
+             error_log("OCI8 [eliminarUsuario ID:{$idUsuario}]: Ejecución exitosa.");
+        }
 
-        $resultado = $cursor->fetchAll(PDO::FETCH_OBJ);
-        return $resultado;
+        return $exito;
 
-    } catch (PDOException $e) {
-        file_put_contents("log_error_usuarios.txt", "Error al obtener usuarios: " . $e->getMessage());
-        return [];
+    } catch (Exception $e) {
+        error_log(">>> ERROR en eliminarUsuario(ID: {$idUsuario}) [OCI8]: " . $e->getMessage());
+        return false; // Indica fallo si hubo excepción
+    } finally {
+        if ($stid) @oci_free_statement($stid);
+        if ($conn) @oci_close($conn);
+        error_log("OCI8 [eliminarUsuario ID:{$idUsuario}]: Recursos liberados.");
     }
 }
 
+function editarUsuario($usuario) {
+    $host = "localhost"; $port = "1521"; $sid = "xe";
+    $user = "ADMINISTRADOR"; $pass = "123"; $charset = 'AL32UTF8';
+    $tns = "//$host:$port/$sid";
+
+    $conn = null; $stid = null;
+    $exito = false;
+
+    if (!isset($usuario->id_usuario) || !isset($usuario->nombre) || !isset($usuario->correo) || !isset($usuario->id_rol)) {
+         throw new InvalidArgumentException("Datos incompletos para actualizar usuario.");
+    }
+
+    try {
+        $conn = oci_connect($user, $pass, $tns, $charset);
+        if (!$conn) throw new Exception("Error OCI8 al conectar (editar): " . oci_error()['message']);
+        error_log("OCI8 [editarUsuario ID:{$usuario->id}]: Conexión OK.");
+
+        // Llamada al SP con los 4 parámetros CORRECTOS
+        $sql = "BEGIN FIDE_USUARIO_ACTUALIZAR_SP(:p_id_usuario, :p_nombre, :p_correo, :p_id_rol); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("Error OCI8 al parsear SP (editar): " . oci_error($conn)['message']);
+
+        // Bind de los 4 parámetros de ENTRADA
+        $idUsuarioInt = intval($usuario->id_usuario);
+        $idRolInt = intval($usuario->id_rol);
+        $nombreStr = strval($usuario->nombre);
+        $correoStr = strval($usuario->correo);
+
+        oci_bind_by_name($stid, ":p_id_usuario", $idUsuarioInt, -1, SQLT_INT);
+        oci_bind_by_name($stid, ":p_nombre", $nombreStr);
+        oci_bind_by_name($stid, ":p_correo", $correoStr);
+        oci_bind_by_name($stid, ":p_id_rol", $idRolInt, -1, SQLT_INT);
+
+        // Ejecuta y confirma (el SP ya hace COMMIT)
+        $exito = oci_execute($stid, OCI_COMMIT_ON_SUCCESS);
+
+        if (!$exito) {
+             $e = oci_error($stid);
+             error_log("Error OCI8 al ejecutar SP (editar): " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+             // $exito ya es false
+        } else {
+             error_log("OCI8 [editarUsuario ID:{$usuario->id}]: Ejecución exitosa.");
+        }
+
+        return $exito;
+
+    } catch (Exception $e) {
+        error_log(">>> ERROR en editarUsuario(ID: {$usuario->id}) [OCI8]: " . $e->getMessage());
+        // Podrías relanzar o simplemente retornar false
+        // throw $e;
+        return false; // Indica fallo si hubo excepción
+    } finally {
+        if ($stid) @oci_free_statement($stid);
+        if ($conn) @oci_close($conn);
+        error_log("OCI8 [editarUsuario ID:{$usuario->id}]: Recursos liberados.");
+    }
+}
+
+function obtenerUsuarioPorId($idUsuario) {
+    $conn = null;
+    $stid = null;
+    $curs = null;
+    $usuario_final = null; // Resultado por defecto
+
+    // --- Detalles de Conexión OCI8 ---
+    $host = "localhost"; $port = "1521"; $sid  = "xe";
+    $user = "ADMINISTRADOR"; $pass = "123"; $charset = 'AL32UTF8';
+    $connection_string = "//" . $host . ":" . $port . "/" . $sid;
+    // --- Fin Detalles de Conexión ---
+
+    try {
+        $conn = oci_connect($user, $pass, $connection_string, $charset);
+        if (!$conn) {
+            $e = oci_error();
+            throw new Exception("Error de conexión OCI8: " . ($e['message'] ?? 'Error desconocido'));
+        }
+
+        // Asegúrate que los nombres coincidan con Oracle (P_ID_USUARIO, P_RESULTADO)
+        $sql = "BEGIN FIDE_USUARIO_OBTENER_POR_ID_SP(:P_ID_USUARIO, :P_RESULTADO); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) {
+            $e = oci_error($conn);
+            throw new Exception("Error al parsear SQL OCI8 (por ID): " . ($e['message'] ?? 'Error desconocido'));
+        }
+
+        // --- Bind Parámetro de ENTRADA ---
+        $idUsuarioInt = intval($idUsuario); // Asegura que sea entero
+        if (!oci_bind_by_name($stid, ":P_ID_USUARIO", $idUsuarioInt, -1, SQLT_INT)) { // Tipo SQLT_INT para NUMBER
+             $e = oci_error($stid);
+             throw new Exception("Error al bindear :P_ID_USUARIO OCI8: " . ($e['message'] ?? 'Error desconocido'));
+        }
+
+        // --- Bind Parámetro de SALIDA (Cursor) ---
+        $curs = oci_new_cursor($conn);
+        if (!$curs) {
+            $e = oci_error($conn);
+            throw new Exception("Error al crear cursor OCI8 (por ID): " . ($e['message'] ?? 'Error desconocido'));
+        }
+        if (!oci_bind_by_name($stid, ":P_RESULTADO", $curs, -1, OCI_B_CURSOR)) {
+             $e = oci_error($stid);
+             throw new Exception("Error al bindear :P_RESULTADO OCI8: " . ($e['message'] ?? 'Error desconocido'));
+        }
+
+        // Ejecuta el bloque PL/SQL
+        if (!oci_execute($stid, OCI_NO_AUTO_COMMIT)) {
+            $e = oci_error($stid);
+            throw new Exception("Error al ejecutar procedimiento OCI8 (por ID): " . ($e['message'] ?? 'Error desconocido'));
+        }
+
+        // Ejecuta el CURSOR
+        if (!oci_execute($curs, OCI_NO_AUTO_COMMIT)) {
+             $e = oci_error($curs);
+             throw new Exception("Error al ejecutar cursor OCI8 (por ID): " . ($e['message'] ?? 'Error desconocido'));
+        }
+
+        // Obtiene la ÚNICA fila esperada del cursor
+        // Usamos oci_fetch_assoc para obtener claves asociativas (MAYÚSCULAS por defecto)
+        $usuario_oci = oci_fetch_assoc($curs);
+
+        if ($usuario_oci === false) {
+             // No encontró fila o hubo error en fetch
+             error_log(">>> [obtenerUsuarioPorId OCI] oci_fetch_assoc devolvió false para ID: " . $idUsuarioInt);
+             // $usuario_final sigue siendo null
+        } else {
+             error_log(">>> [obtenerUsuarioPorId OCI] Fila leída: " . print_r($usuario_oci, true));
+             // Convertir claves a minúsculas
+             $usuario_formateado = array_change_key_case($usuario_oci, CASE_LOWER);
+             // Convertir a objeto
+             $usuario_final = (object)$usuario_formateado;
+             error_log(">>> [obtenerUsuarioPorId OCI] Usuario formateado: " . print_r($usuario_final, true));
+        }
+
+    } catch (Exception $e) {
+        $logMessage = date('Y-m-d H:i:s') . " - Error en obtenerUsuarioPorId(ID: $idUsuario) [OCI8]: " . $e->getMessage() . "\n";
+        file_put_contents("log_error_usuarios.txt", $logMessage, FILE_APPEND);
+        error_log(">>> ERROR en obtenerUsuarioPorId(ID: $idUsuario) [OCI8]: " . $e->getMessage());
+        // $usuario_final sigue siendo null
+
+    } finally {
+        // Libera recursos OCI8
+        if ($curs) { oci_free_statement($curs); }
+        if ($stid) { oci_free_statement($stid); }
+        if ($conn) { oci_close($conn); }
+         error_log(">>> [obtenerUsuarioPorId OCI] Recursos OCI liberados.");
+    }
+
+    // Devuelve el objeto de usuario encontrado o null si no se encontró/hubo error
+    return $usuario_final;
+}
+
+function obtenerUsuarios() {
+    // --- Detalles de Conexión ---
+    // Ajusta estos valores según tu configuración
+    $host = "localhost";
+    $port = "1521";
+    $sid  = "xe"; // O SERVICE_NAME si usas eso
+    $user = "ADMINISTRADOR"; // Usuario de la BD Oracle
+    $pass = "123";       // Contraseña del usuario de la BD
+    $charset = 'AL32UTF8'; // O el charset correcto para tu BD y datos
+
+    // Construir la cadena de conexión TNS para oci_connect
+    // Easy Connect es generalmente la más simple si está habilitado en Oracle
+    $tns = "//$host:$port/$sid";
+
+    // Inicializar variables
+    $conn = null; // Conexión OCI8
+    $stid = null; // Statement principal (llamada al SP)
+    $curs = null; // Cursor OUT
+    $usuarios_oracle = []; // Array para resultados crudos de Oracle (claves mayúsculas)
+    $usuarios_final = [];  // Array final con claves en minúsculas
+
+    try {
+        // 1. Conectar usando OCI8
+        error_log("OCI8: Intentando conectar a '$tns' con usuario '$user'...");
+        $conn = oci_connect($user, $pass, $tns, $charset);
+        if (!$conn) {
+            $e = oci_error();
+            error_log("Error OCI8 al conectar: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+            throw new Exception("Error OCI8 al conectar: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+        }
+        error_log("OCI8: Conexión exitosa.");
+
+        // 2. Preparar la llamada al procedimiento almacenado
+        $sql = 'BEGIN FIDE_USUARIO_OBTENER_TODOS_SP(:cursor); END;';
+        error_log("OCI8: Preparando SQL: " . $sql);
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) {
+            $e = oci_error($conn);
+            error_log("Error OCI8 al parsear SP: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+            throw new Exception("Error OCI8 al parsear SP: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+        }
+        error_log("OCI8: Parseo del SP exitoso.");
+
+        // 3. Crear un nuevo descriptor de cursor
+        $curs = oci_new_cursor($conn);
+        if (!$curs) {
+            $e = oci_error($conn);
+            error_log("Error OCI8 al crear cursor: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+            throw new Exception("Error OCI8 al crear cursor: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+        }
+        error_log("OCI8: Cursor creado.");
+
+        // 4. Bindea el cursor PHP al placeholder :cursor del SP
+        //    Se usa OCI_B_CURSOR para indicar que es un cursor.
+        //    El tamaño -1 es estándar para cursores OUT.
+        error_log("OCI8: Bindeando cursor al placeholder :cursor...");
+        if (!oci_bind_by_name($stid, ":cursor", $curs, -1, OCI_B_CURSOR)) {
+            $e = oci_error($stid);
+            error_log("Error OCI8 al bindear cursor: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+            throw new Exception("Error OCI8 al bindear cursor: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+        }
+        error_log("OCI8: Bindeo del cursor exitoso.");
+
+        // 5. Ejecuta la llamada al procedimiento
+        //    OCI_DEFAULT asegura que la ejecución no haga COMMIT automáticamente.
+        error_log("OCI8: Ejecutando statement principal (llamada al SP)...");
+        if (!oci_execute($stid, OCI_DEFAULT)) {
+            $e = oci_error($stid);
+            error_log("Error OCI8 al ejecutar SP: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+            throw new Exception("Error OCI8 al ejecutar SP: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+        }
+        error_log("OCI8: Ejecución del SP exitosa.");
+
+        // 6. Ejecuta el CURSOR que fue devuelto por el procedimiento
+        error_log("OCI8: Ejecutando el cursor devuelto...");
+        if (!oci_execute($curs, OCI_DEFAULT)) {
+             $e = oci_error($curs);
+             error_log("Error OCI8 al ejecutar el CURSOR devuelto: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+             throw new Exception("Error OCI8 al ejecutar el CURSOR devuelto: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+        }
+        error_log("OCI8: Ejecución del CURSOR devuelto exitosa.");
+
+        // 7. Obtiene todos los resultados del cursor en un array
+        //    OCI_FETCHSTATEMENT_BY_ROW: Organiza el array por filas.
+        //    OCI_ASSOC: Usa nombres de columna (asociativos) como claves.
+        error_log("OCI8: Realizando fetch all del cursor...");
+        $num_filas = oci_fetch_all($curs, $usuarios_oracle, 0, -1, OCI_FETCHSTATEMENT_BY_ROW + OCI_ASSOC);
+        if ($num_filas === false) {
+             $e = oci_error($curs);
+             error_log("Error OCI8 durante fetch all: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+             // Podrías decidir continuar con un array vacío o lanzar excepción
+             // throw new Exception("Error OCI8 durante fetch all: " . ($e ? htmlentities($e['message']) : 'Error desconocido'));
+             $usuarios_oracle = []; // Asume array vacío si fetch falla pero no es excepción fatal
+        }
+        error_log("OCI8: Fetch all completado. Filas obtenidas: " . ($num_filas !== false ? $num_filas : 'Error/0'));
+        // Descomenta para ver la estructura devuelta por Oracle:
+        // error_log("OCI8: Datos crudos de Oracle: " . print_r($usuarios_oracle, true));
+
+        // 8. *** Convertir claves a minúsculas ***
+        error_log("OCI8: Convirtiendo claves a minúsculas...");
+        foreach ($usuarios_oracle as $fila_oracle) {
+            // array_change_key_case convierte todas las claves de un array
+            $usuarios_final[] = array_change_key_case($fila_oracle, CASE_LOWER);
+        }
+        error_log("OCI8: Conversión de claves finalizada. Filas procesadas: " . count($usuarios_final));
+        // Descomenta para ver la estructura final:
+        // error_log("OCI8: Datos finales (claves minúsculas): " . print_r($usuarios_final, true));
+
+        // 9. Liberar recursos (¡importante hacerlo siempre!)
+        error_log("OCI8: Liberando recursos...");
+        if ($curs) {
+             @oci_free_statement($curs); // Usar @ para suprimir errores si ya falló antes
+        }
+        if ($stid) {
+             @oci_free_statement($stid);
+        }
+        if ($conn) {
+             @oci_close($conn);
+        }
+        error_log("OCI8: Recursos liberados.");
+
+        // 10. Devolver el array con claves en minúsculas
+        return $usuarios_final;
+
+    } catch (Exception $e) {
+        // Loguear cualquier excepción capturada durante el proceso
+        error_log("--- ERROR CATCH GENERAL en obtenerUsuarios() [OCI8] ---");
+        error_log("Mensaje: " . $e->getMessage());
+        error_log("Archivo: " . $e->getFile() . " - Línea: " . $e->getLine());
+        error_log("Stack Trace: " . $e->getTraceAsString());
+        error_log("-------------------------------------------------------");
 
 
+        // Asegurarse de intentar liberar recursos incluso en caso de error grave
+        if ($curs) @oci_free_statement($curs);
+        if ($stid) @oci_free_statement($stid);
+        if ($conn) @oci_close($conn);
+        error_log("OCI8: Recursos liberados (desde catch).");
+
+
+        // Relanzar la excepción para que el script que llama (obtener_usuarios.php)
+        // pueda manejarla y devolver una respuesta de error JSON apropiada.
+        throw $e;
+    }
+}
 function registrarUsuario($usuario) {
     $bd = conectarBaseDatos();
 

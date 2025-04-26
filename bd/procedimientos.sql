@@ -7,6 +7,7 @@ P_NOMBRE IN VARCHAR2
 BEGIN
 INSERT INTO FIDE_ROL_TB (id_rol, nombre)
 VALUES (P_ID_ROL, P_NOMBRE);
+COMMIT;
 END;
 /
 -- Actualizar un rol
@@ -18,6 +19,7 @@ BEGIN
 UPDATE FIDE_ROL_TB
 SET nombre = P_NOMBRE
 WHERE id_rol = P_ID_ROL;
+COMMIT;
 END;
 /
 -- Eliminar un rol
@@ -27,6 +29,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_ROL_TB
 WHERE id_rol = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un rol por ID
@@ -38,6 +41,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_ROL_TB
 WHERE id_rol = P_ID;
+COMMIT;
 END;
 /
 -- 2 FIDE_USUARIO_TB
@@ -55,6 +59,7 @@ id_usuario, nombre, correo, contrasena, id_rol
 ) VALUES (
 P_ID_USUARIO, P_NOMBRE, P_CORREO, P_CONTRASENA, P_ID_ROL
 );
+COMMIT;
 END;
 /
 -- Actualizar un usuario
@@ -62,16 +67,15 @@ CREATE OR REPLACE PROCEDURE FIDE_USUARIO_ACTUALIZAR_SP (
 P_ID_USUARIO IN NUMBER,
 P_NOMBRE IN VARCHAR2,
 P_CORREO IN VARCHAR2,
-P_CONTRASENA IN VARCHAR2,
 P_ID_ROL IN NUMBER
 ) IS
 BEGIN
 UPDATE FIDE_USUARIO_TB
 SET nombre = P_NOMBRE,
 correo = P_CORREO,
-contrasena = P_CONTRASENA,
 id_rol = P_ID_ROL
 WHERE id_usuario = P_ID_USUARIO;
+COMMIT;
 END;
 /
 -- Eliminar un usuario
@@ -81,6 +85,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_USUARIO_TB
 WHERE id_usuario = P_ID;
+COMMIT;
 END;
 /
 
@@ -93,6 +98,7 @@ BEGIN
     OPEN P_RESULTADO FOR
     SELECT id_usuario, nombre, correo, id_rol
     FROM FIDE_USUARIO_TB;
+COMMIT;
 END;
 /
 
@@ -105,6 +111,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_USUARIO_TB
 WHERE id_usuario = P_ID;
+COMMIT;
 END;
 /
 -- Obtener datos de usuario por ID
@@ -118,6 +125,7 @@ OPEN P_RESULTADO FOR
 SELECT id_usuario, nombre, correo, id_rol
 FROM FIDE_USUARIO_TB
 WHERE id_usuario = P_ID_USUARIO;
+COMMIT;
 END;
 /
  -- Cambiar password
@@ -130,6 +138,7 @@ BEGIN
 UPDATE FIDE_USUARIO_TB
 SET contrasena = P_NUEVA_CONTRASENA
 WHERE id_usuario = P_ID_USUARIO;
+COMMIT;
 END;
 /
 -- Verificar Password 
@@ -150,6 +159,7 @@ P_RESULTADO := 'VALIDO';
 ELSE
 P_RESULTADO := 'INCORRECTO';
 END IF;
+COMMIT;
 END;
 /
 -- 3 FIDE_CATEGORIA_TB
@@ -161,6 +171,7 @@ P_NOMBRE IN VARCHAR2
 BEGIN
 INSERT INTO FIDE_CATEGORIA_TB (id_categoria, nombre)
 VALUES (P_ID_CATEGORIA, P_NOMBRE);
+COMMIT;
 END;
 /
 -- Actualizar una categoría
@@ -172,6 +183,7 @@ BEGIN
 UPDATE FIDE_CATEGORIA_TB
 SET nombre = P_NOMBRE
 WHERE id_categoria = P_ID_CATEGORIA;
+COMMIT;
 END;
 /
 -- Eliminar una categoría
@@ -181,6 +193,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_CATEGORIA_TB
 WHERE id_categoria = P_ID;
+COMMIT;
 END;
 /
 -- Obtener una categoría por ID
@@ -192,6 +205,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_CATEGORIA_TB
 WHERE id_categoria = P_ID;
+COMMIT;
 END;
 /
 -- 4 FIDE_UNIDAD_MEDIDA_TB
@@ -203,6 +217,7 @@ P_NOMBRE IN VARCHAR2
 BEGIN
 INSERT INTO FIDE_UNIDAD_MEDIDA_TB (id_unidad_medida, nombre)
 VALUES (P_ID_UNIDAD_MEDIDA, P_NOMBRE);
+COMMIT;
 END;
 /
 -- Actualizar una unidad de medida
@@ -214,6 +229,7 @@ BEGIN
 UPDATE FIDE_UNIDAD_MEDIDA_TB
 SET nombre = P_NOMBRE
 WHERE id_unidad_medida = P_ID_UNIDAD_MEDIDA;
+COMMIT;
 END;
 /
 -- Eliminar una unidad de medida
@@ -223,6 +239,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_UNIDAD_MEDIDA_TB
 WHERE id_unidad_medida = P_ID;
+COMMIT;
 END;
 /
 -- Obtener una unidad de medida por ID
@@ -234,6 +251,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_UNIDAD_MEDIDA_TB
 WHERE id_unidad_medida = P_ID;
+COMMIT;
 END;
 /
 -- 5 FIDE_PRODUCTO_TB
@@ -252,6 +270,7 @@ id_producto, nombre, descripcion, precio, id_categoria, id_unidad_medida
 ) VALUES (
 P_ID_PRODUCTO, P_NOMBRE, P_DESCRIPCION, P_PRECIO, P_ID_CATEGORIA, P_ID_UNIDAD_MEDIDA
 );
+COMMIT;
 END;
 /
 -- Actualizar un producto
@@ -271,6 +290,7 @@ precio = P_PRECIO,
 id_categoria = P_ID_CATEGORIA,
 id_unidad_medida = P_ID_UNIDAD_MEDIDA
 WHERE id_producto = P_ID_PRODUCTO;
+COMMIT;
 END;
 /
 -- Eliminar un producto
@@ -280,6 +300,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_PRODUCTO_TB
 WHERE id_producto = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un producto por ID
@@ -291,6 +312,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_PRODUCTO_TB
 WHERE id_producto = P_ID;
+COMMIT;
 END;
 /
 -- 6 FIDE_CLIENTE_TB
@@ -307,6 +329,7 @@ id_cliente, nombre, correo, telefono
 ) VALUES (
 P_ID_CLIENTE, P_NOMBRE, P_CORREO, P_TELEFONO
 );
+COMMIT;
 END;
 /
 -- Actualizar un cliente
@@ -322,6 +345,7 @@ SET nombre = P_NOMBRE,
 correo = P_CORREO,
 telefono = P_TELEFONO
 WHERE id_cliente = P_ID_CLIENTE;
+COMMIT;
 END;
 /
 -- Eliminar un cliente
@@ -331,6 +355,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_CLIENTE_TB
 WHERE id_cliente = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un cliente por ID
@@ -342,6 +367,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_CLIENTE_TB
 WHERE id_cliente = P_ID;
+COMMIT;
 END;
 /
 -- 7 FIDE_DIRECCION_TB
@@ -357,6 +383,7 @@ id_direccion, id_cliente, direccion
 ) VALUES (
 P_ID_DIRECCION, P_ID_CLIENTE, P_DIRECCION
 );
+COMMIT;
 END;
 /
 -- Actualizar una dirección
@@ -370,6 +397,7 @@ UPDATE FIDE_DIRECCION_TB
 SET id_cliente = P_ID_CLIENTE,
 direccion = P_DIRECCION
 WHERE id_direccion = P_ID_DIRECCION;
+COMMIT;
 END;
 /
 -- Eliminar una dirección
@@ -379,6 +407,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_DIRECCION_TB
 WHERE id_direccion = P_ID;
+COMMIT;
 END;
 /
 -- Obtener una dirección por ID
@@ -390,6 +419,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_DIRECCION_TB
 WHERE id_direccion = P_ID;
+COMMIT;
 END;
 /
 -- 8 FIDE_PROVINCIA_TB
@@ -404,6 +434,7 @@ id_provincia, nombre
 ) VALUES (
 P_ID_PROVINCIA, P_NOMBRE
 );
+COMMIT;
 END;
 /
 -- Actualizar una provincia
@@ -415,6 +446,7 @@ BEGIN
 UPDATE FIDE_PROVINCIA_TB
 SET nombre = P_NOMBRE
 WHERE id_provincia = P_ID_PROVINCIA;
+COMMIT;
 END;
 /
 -- Eliminar una provincia
@@ -424,6 +456,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_PROVINCIA_TB
 WHERE id_provincia = P_ID;
+COMMIT;
 END;
 /
 -- Obtener una provincia por ID
@@ -435,6 +468,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_PROVINCIA_TB
 WHERE id_provincia = P_ID;
+COMMIT;
 END;
 /
 -- 9 FIDE_CANTON_TB
@@ -450,6 +484,7 @@ id_canton, id_provincia, nombre
 ) VALUES (
 P_ID_CANTON, P_ID_PROVINCIA, P_NOMBRE
 );
+COMMIT;
 END;
 /
 -- Actualizar un cantón
@@ -463,6 +498,7 @@ UPDATE FIDE_CANTON_TB
 SET id_provincia = P_ID_PROVINCIA,
 nombre = P_NOMBRE
 WHERE id_canton = P_ID_CANTON;
+COMMIT;
 END;
 /
 -- Eliminar un cantón
@@ -472,6 +508,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_CANTON_TB
 WHERE id_canton = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un cantón por ID
@@ -483,6 +520,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_CANTON_TB
 WHERE id_canton = P_ID;
+COMMIT;
 END;
 /
 -- 10 FIDE_DISTRITO_TB
@@ -498,6 +536,7 @@ id_distrito, id_canton, nombre
 ) VALUES (
 P_ID_DISTRITO, P_ID_CANTON, P_NOMBRE
 );
+COMMIT;
 END;
 /
 -- Actualizar un distrito
@@ -511,6 +550,7 @@ UPDATE FIDE_DISTRITO_TB
 SET id_canton = P_ID_CANTON,
 nombre = P_NOMBRE
 WHERE id_distrito = P_ID_DISTRITO;
+COMMIT;
 END;
 /
 -- Eliminar un distrito
@@ -520,6 +560,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_DISTRITO_TB
 WHERE id_distrito = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un distrito por ID
@@ -531,6 +572,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_DISTRITO_TB
 WHERE id_distrito = P_ID;
+COMMIT;
 END;
 /
 -- 11 FIDE_ESTADO_PEDIDO_TB
@@ -545,6 +587,7 @@ id_estado, nombre
 ) VALUES (
 P_ID_ESTADO, P_NOMBRE
 );
+COMMIT;
 END;
 /
 -- Actualizar un estado de pedido
@@ -556,6 +599,7 @@ BEGIN
 UPDATE FIDE_ESTADO_PEDIDO_TB
 SET nombre = P_NOMBRE
 WHERE id_estado = P_ID_ESTADO;
+COMMIT;
 END;
 /
 -- Eliminar un estado de pedido
@@ -565,6 +609,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_ESTADO_PEDIDO_TB
 WHERE id_estado = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un estado de pedido por ID
@@ -576,6 +621,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_ESTADO_PEDIDO_TB
 WHERE id_estado = P_ID;
+COMMIT;
 END;
 /
 -- 12 FIDE_PEDIDO_TB
@@ -604,6 +650,7 @@ P_ID_PEDIDO, P_FECHA_PEDIDO, P_CANTIDAD, P_PRECIO_UNITARIO,
 P_SUBTOTAL, P_TOTAL, P_ID_FACTURA, P_ID_PRODUCTO,
 P_ID_ESTADO, P_ID_USUARIO, P_ID_CLIENTE, P_ID_DIRECCION
 );
+COMMIT;
 END;
 /
 -- Actualizar un pedido
@@ -635,6 +682,7 @@ id_usuario = P_ID_USUARIO,
 id_cliente = P_ID_CLIENTE,
 id_direccion = P_ID_DIRECCION
 WHERE id_pedido = P_ID_PEDIDO;
+COMMIT;
 END;
 /
 -- Eliminar un pedido
@@ -644,6 +692,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_PEDIDO_TB
 WHERE id_pedido = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un pedido por ID
@@ -655,6 +704,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_PEDIDO_TB
 WHERE id_pedido = P_ID;
+COMMIT;
 END;
 /
 -- 13 FIDE_INGRESO_TB
@@ -671,6 +721,7 @@ id_ingreso, id_producto, cantidad, fecha
 ) VALUES (
 P_ID_INGRESO, P_ID_PRODUCTO, P_CANTIDAD, P_FECHA
 );
+COMMIT;
 END;
 /
 -- Actualizar un ingreso
@@ -686,6 +737,7 @@ SET id_producto = P_ID_PRODUCTO,
 cantidad = P_CANTIDAD,
 fecha = P_FECHA
 WHERE id_ingreso = P_ID_INGRESO;
+COMMIT;
 END;
 /
 -- Eliminar un ingreso
@@ -695,6 +747,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_INGRESO_TB
 WHERE id_ingreso = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un ingreso por ID
@@ -706,6 +759,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_INGRESO_TB
 WHERE id_ingreso = P_ID;
+COMMIT;
 END;
 /
 -- 14 FIDE_EGRESO_TB
@@ -722,6 +776,7 @@ id_egreso, id_producto, cantidad, fecha
 ) VALUES (
 P_ID_EGRESO, P_ID_PRODUCTO, P_CANTIDAD, P_FECHA
 );
+COMMIT;
 END;
 /
 -- Actualizar un egreso
@@ -737,6 +792,7 @@ SET id_producto = P_ID_PRODUCTO,
 cantidad = P_CANTIDAD,
 fecha = P_FECHA
 WHERE id_egreso = P_ID_EGRESO;
+COMMIT;
 END;
 /
 -- Eliminar un egreso
@@ -746,6 +802,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_EGRESO_TB
 WHERE id_egreso = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un egreso por ID
@@ -757,6 +814,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_EGRESO_TB
 WHERE id_egreso = P_ID;
+COMMIT;
 END;
 /
 -- 15 FIDE_INSUMO_TB
@@ -773,6 +831,7 @@ id_insumo, nombre, descripcion, id_unidad_medida
 ) VALUES (
 P_ID_INSUMO, P_NOMBRE, P_DESCRIPCION, P_ID_UNIDAD_MEDIDA
 );
+COMMIT;
 END;
 /
 -- Actualizar un insumo
@@ -788,6 +847,7 @@ SET nombre = P_NOMBRE,
 descripcion = P_DESCRIPCION,
 id_unidad_medida = P_ID_UNIDAD_MEDIDA
 WHERE id_insumo = P_ID_INSUMO;
+COMMIT;
 END;
 /
 -- Eliminar un insumo
@@ -797,6 +857,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_INSUMO_TB
 WHERE id_insumo = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un insumo por ID
@@ -808,6 +869,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_INSUMO_TB
 WHERE id_insumo = P_ID;
+COMMIT;
 END;
 /
 -- Obtener datos de insumo por ID
@@ -821,6 +883,7 @@ OPEN P_RESULTADO FOR
 SELECT id_insumo, nombre, descripcion, id_unidad_medida
 FROM FIDE_INSUMO_TB
 WHERE id_insumo = P_ID_INSUMO;
+COMMIT;
 END;
 /
 -- Obtener datos de insumo por nombre
@@ -834,6 +897,7 @@ OPEN P_RESULTADO FOR
 SELECT id_insumo, nombre, descripcion, id_unidad_medida
 FROM FIDE_INSUMO_TB
 WHERE UPPER(nombre) = UPPER(P_NOMBRE);
+COMMIT;
 END;
 /
 -- 16 FIDE_PROVEEDOR_TB
@@ -850,6 +914,7 @@ id_proveedor, nombre, correo, telefono
 ) VALUES (
 P_ID_PROVEEDOR, P_NOMBRE, P_CORREO, P_TELEFONO
 );
+COMMIT;
 END;
 /
 -- Actualizar un proveedor
@@ -865,6 +930,7 @@ SET nombre = P_NOMBRE,
 correo = P_CORREO,
 telefono = P_TELEFONO
 WHERE id_proveedor = P_ID_PROVEEDOR;
+COMMIT;
 END;
 /
 -- Eliminar un proveedor
@@ -874,6 +940,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_PROVEEDOR_TB
 WHERE id_proveedor = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un proveedor por ID
@@ -885,6 +952,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_PROVEEDOR_TB
 WHERE id_proveedor = P_ID;
+COMMIT;
 END;
 /
 -- 17 FIDE_ORDEN_COMPRA_TB
@@ -901,6 +969,7 @@ id_orden_compra, id_proveedor, fecha, total
 ) VALUES (
 P_ID_ORDEN_COMPRA, P_ID_PROVEEDOR, P_FECHA, P_TOTAL
 );
+COMMIT;
 END;
 /
 -- Actualizar una orden de compra
@@ -916,6 +985,7 @@ SET id_proveedor = P_ID_PROVEEDOR,
 fecha = P_FECHA,
 total = P_TOTAL
 WHERE id_orden_compra = P_ID_ORDEN_COMPRA;
+COMMIT;
 END;
 /
 -- Eliminar una orden de compra
@@ -925,6 +995,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_ORDEN_COMPRA_TB
 WHERE id_orden_compra = P_ID;
+COMMIT;
 END;
 /
 -- Obtener una orden de compra por ID
@@ -936,6 +1007,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_ORDEN_COMPRA_TB
 WHERE id_orden_compra = P_ID;
+COMMIT;
 END;
 /
 -- 18 FIDE_PRODUCTO_INSUMO_TB
@@ -951,6 +1023,7 @@ id_producto_insumo, id_producto, id_insumo
 ) VALUES (
 P_ID_PRODUCTO_INSUMO, P_ID_PRODUCTO, P_ID_INSUMO
 );
+COMMIT;
 END;
 /
 -- Actualizar relación producto-insumo
@@ -964,6 +1037,7 @@ UPDATE FIDE_PRODUCTO_INSUMO_TB
 SET id_producto = P_ID_PRODUCTO,
 id_insumo = P_ID_INSUMO
 WHERE id_producto_insumo = P_ID_PRODUCTO_INSUMO;
+COMMIT;
 END;
 /
 -- Eliminar relación producto-insumo
@@ -973,6 +1047,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_PRODUCTO_INSUMO_TB
 WHERE id_producto_insumo = P_ID;
+COMMIT;
 END;
 /
 -- Obtener relación producto-insumo por ID
@@ -984,6 +1059,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_PRODUCTO_INSUMO_TB
 WHERE id_producto_insumo = P_ID;
+COMMIT;
 END;
 /
 -- 19 FIDE_TIPO_EDIFICIO_TB
@@ -998,6 +1074,7 @@ id_tipo_edificio, nombre
 ) VALUES (
 P_ID_TIPO_EDIFICIO, P_NOMBRE
 );
+COMMIT;
 END;
 /
 -- Actualizar un tipo de edificio
@@ -1009,6 +1086,7 @@ BEGIN
 UPDATE FIDE_TIPO_EDIFICIO_TB
 SET nombre = P_NOMBRE
 WHERE id_tipo_edificio = P_ID_TIPO_EDIFICIO;
+COMMIT;
 END;
 /
 -- Eliminar un tipo de edificio
@@ -1018,6 +1096,7 @@ P_ID IN NUMBER
 BEGIN
 DELETE FROM FIDE_TIPO_EDIFICIO_TB
 WHERE id_tipo_edificio = P_ID;
+COMMIT;
 END;
 /
 -- Obtener un tipo de edificio por ID
@@ -1029,6 +1108,7 @@ BEGIN
 OPEN P_RESULTADO FOR
 SELECT * FROM FIDE_TIPO_EDIFICIO_TB
 WHERE id_tipo_edificio = P_ID;
+COMMIT;
 END;
 /
 ---20 FIDE_MESA
@@ -1041,6 +1121,7 @@ CREATE OR REPLACE PROCEDURE FIDE_MESA_DELETE_SP (
 BEGIN
     DELETE FROM FIDE_MESA_TB
     WHERE ID_MESA = P_ID_MESA;
+COMMIT;
 END;
 /
 ---Actualizar
@@ -1056,6 +1137,7 @@ BEGIN
         CAPACIDAD = P_CAPACIDAD,
         UBICACION = P_UBICACION
     WHERE ID_MESA = P_ID_MESA;
+COMMIT;
 END;
 /
 ---Consultar
@@ -1067,6 +1149,7 @@ BEGIN
     OPEN P_RESULTADO FOR
     SELECT * FROM FIDE_MESA_TB
     WHERE ID_MESA = P_ID_MESA;
+COMMIT;
 END;
 /
 ---Insertar
@@ -1079,6 +1162,7 @@ CREATE OR REPLACE PROCEDURE FIDE_MESA_INSERT_SP (
 BEGIN
     INSERT INTO FIDE_MESA_TB (ID_MESA, NUMERO_MESA, CAPACIDAD, UBICACION)
     VALUES (P_ID_MESA, P_NUMERO_MESA, P_CAPACIDAD, P_UBICACION);
+COMMIT;
 END;
 /
 
@@ -1097,6 +1181,7 @@ BEGIN
           AND fecha_pedido < TRUNC(SYSDATE + 7, 'IW')
         GROUP BY TO_CHAR(fecha_pedido, 'Day'), TO_CHAR(fecha_pedido, 'D')
         ORDER BY TO_NUMBER(TO_CHAR(fecha_pedido, 'D'));
+        COMMIT;
 END;
 /
 

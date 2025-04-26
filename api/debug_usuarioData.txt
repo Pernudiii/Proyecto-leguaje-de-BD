@@ -1,6 +1,0 @@
-Array
-(
-    [nombreUsuario] => Valeria Arias
-    [idUsuario] => 5
-    [idRol] => 1
-)

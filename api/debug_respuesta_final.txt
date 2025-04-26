@@ -1,8 +1,0 @@
-{
-    "resultado": true,
-    "datos": {
-        "nombreUsuario": "Valeria Arias",
-        "idUsuario": "5",
-        "idRol": "1"
-    }
-}

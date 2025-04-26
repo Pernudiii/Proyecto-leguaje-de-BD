@@ -120,7 +120,7 @@ export default {
                 type: 'is-danger',
                 hasIcon: true,
                 onConfirm: () => {
-                    HttpService.eliminar("eliminar_usuario.php", usuario.id)
+                    HttpService.eliminar("eliminar_usuario.php", idusuario)
                     .then(eliminado => {
                         if(eliminado) {
                             this.obtenerUsuarios()
@@ -139,19 +139,23 @@ export default {
             })
         },
 
-        obtenerUsuarios(){
-            this.cargando = true
+        obtenerUsuarios() {
+            this.cargando = true;
             HttpService.obtener("obtener_usuarios.php")
-            .then(resultado=> {
-                console.log("Usuarios recibidos:", resultado);
-                this.usuarios = resultado
-                this.cargando = false
-            })
-            .catch(error => {
-            console.error("Error obteniendo usuarios:", error)
-            this.cargando = false
-        })
-        }   
+                .then(resultado => {
+                if (Array.isArray(resultado)) {
+                    this.usuarios = resultado;
+                } else {
+                    console.error("Error al obtener usuarios:", resultado);
+                    this.usuarios = [];
+                }
+                this.cargando = false;
+                })
+                .catch(error => {
+                console.error("Error al obtener usuarios:", error);
+                this.cargando = false;
+            });
+        }
     }
 }
 </script>
