@@ -163,51 +163,94 @@ COMMIT;
 END;
 /
 -- 3 FIDE_CATEGORIA_TB
--- Insertar una categoría
-CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_INSERTAR_SP (
-P_ID_CATEGORIA IN NUMBER,
-P_NOMBRE IN VARCHAR2
+-- OBTENER TODAS las Categorías
+
+CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_OBTENER_POR_TIPO_SP (
+    P_TIPO IN VARCHAR2, -- Parámetro de entrada para el tipo
+    P_RESULTADO OUT SYS_REFCURSOR
 ) IS
 BEGIN
-INSERT INTO FIDE_CATEGORIA_TB (id_categoria, nombre)
-VALUES (P_ID_CATEGORIA, P_NOMBRE);
-COMMIT;
-END;
+    OPEN P_RESULTADO FOR
+        SELECT
+            id_categoria,
+            nombre,
+            tipo, -- Incluimos tipo y descripción por si acaso
+            descripcion
+        FROM
+            FIDE_CATEGORIA_TB
+        WHERE
+            tipo = P_TIPO -- Filtra por el tipo recibido
+        ORDER BY
+            nombre;
+
+END FIDE_CATEGORIA_OBTENER_POR_TIPO_SP;
+
 /
--- Actualizar una categoría
-CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_ACTUALIZAR_SP (
-P_ID_CATEGORIA IN NUMBER,
-P_NOMBRE IN VARCHAR2
+CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_OBTENER_TODAS_SP (
+    P_RESULTADO OUT SYS_REFCURSOR
 ) IS
 BEGIN
-UPDATE FIDE_CATEGORIA_TB
-SET nombre = P_NOMBRE
-WHERE id_categoria = P_ID_CATEGORIA;
-COMMIT;
-END;
+    OPEN P_RESULTADO FOR
+        SELECT id_categoria, tipo, nombre, descripcion
+        FROM FIDE_CATEGORIA_TB
+        ORDER BY tipo, nombre;
+END FIDE_CATEGORIA_OBTENER_TODAS_SP;
 /
--- Eliminar una categoría
-CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_ELIMINAR_SP (
-P_ID IN NUMBER
-) IS
-BEGIN
-DELETE FROM FIDE_CATEGORIA_TB
-WHERE id_categoria = P_ID;
-COMMIT;
-END;
-/
--- Obtener una categoría por ID
+
+-- OBTENER UNA Categoría por ID
 CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_OBTENER_POR_ID_SP (
-P_ID IN NUMBER,
-P_RESULTADO OUT SYS_REFCURSOR
+    P_ID_CATEGORIA IN NUMBER,
+    P_RESULTADO OUT SYS_REFCURSOR
 ) IS
 BEGIN
-OPEN P_RESULTADO FOR
-SELECT * FROM FIDE_CATEGORIA_TB
-WHERE id_categoria = P_ID;
-COMMIT;
-END;
+    OPEN P_RESULTADO FOR
+        SELECT id_categoria, tipo, nombre, descripcion
+        FROM FIDE_CATEGORIA_TB
+        WHERE id_categoria = P_ID_CATEGORIA;
+END FIDE_CATEGORIA_OBTENER_POR_ID_SP;
 /
+
+-- INSERTAR una Categoría Nueva
+CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_INSERTAR_SP (
+    P_TIPO IN FIDE_CATEGORIA_TB.tipo%TYPE,
+    P_NOMBRE IN FIDE_CATEGORIA_TB.nombre%TYPE,
+    P_DESCRIPCION IN FIDE_CATEGORIA_TB.descripcion%TYPE
+) IS
+BEGIN
+    INSERT INTO FIDE_CATEGORIA_TB (id_categoria, tipo, nombre, descripcion)
+    VALUES (FIDE_CATEGORIA_SEQ.NEXTVAL, P_TIPO, P_NOMBRE, P_DESCRIPCION);
+    COMMIT;
+END FIDE_CATEGORIA_INSERTAR_SP;
+/
+
+-- ACTUALIZAR una Categoría existente
+CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_ACTUALIZAR_SP (
+    P_ID_CATEGORIA IN FIDE_CATEGORIA_TB.id_categoria%TYPE,
+    P_TIPO IN FIDE_CATEGORIA_TB.tipo%TYPE,
+    P_NOMBRE IN FIDE_CATEGORIA_TB.nombre%TYPE,
+    P_DESCRIPCION IN FIDE_CATEGORIA_TB.descripcion%TYPE
+) IS
+BEGIN
+    UPDATE FIDE_CATEGORIA_TB
+    SET tipo = P_TIPO,
+        nombre = P_NOMBRE,
+        descripcion = P_DESCRIPCION
+    WHERE id_categoria = P_ID_CATEGORIA;
+    COMMIT;
+END FIDE_CATEGORIA_ACTUALIZAR_SP;
+/
+
+-- ELIMINAR una Categoría por ID
+CREATE OR REPLACE PROCEDURE FIDE_CATEGORIA_ELIMINAR_SP (
+    P_ID_CATEGORIA IN NUMBER
+) IS
+BEGIN
+    DELETE FROM FIDE_CATEGORIA_TB
+    WHERE id_categoria = P_ID_CATEGORIA;
+    COMMIT;
+END FIDE_CATEGORIA_ELIMINAR_SP;
+/
+
 -- 4 FIDE_UNIDAD_MEDIDA_TB
 -- Insertar una unidad de medida
 CREATE OR REPLACE PROCEDURE FIDE_UNIDAD_MEDIDA_INSERTAR_SP (
@@ -818,87 +861,136 @@ COMMIT;
 END;
 /
 -- 15 FIDE_INSUMO_TB
--- Insertar un insumo
+-- OBTENER TODOS los Insumos (para la tabla principal)
+-- Devuelve las columnas necesarias para mostrar en la tabla Vue, incluyendo nombre de categoría
+CREATE OR REPLACE PROCEDURE FIDE_INSUMO_OBTENER_TODOS_SP (
+    P_RESULTADO OUT SYS_REFCURSOR
+) IS
+BEGIN
+    OPEN P_RESULTADO FOR
+        SELECT
+            i.id_insumo,
+            i.codigo,
+            i.nombre,
+            i.descripcion,
+            i.precio,
+            i.tipo,
+            i.id_categoria,
+            cat.nombre AS nombre_categoria -- Unir para obtener nombre categoría
+        FROM
+            FIDE_INSUMO_TB i
+            LEFT JOIN FIDE_CATEGORIA_TB cat ON i.id_categoria = cat.id_categoria -- Asegúrate que FIDE_CATEGORIA_TB existe
+        ORDER BY
+             i.nombre; -- Ordenar
+
+END FIDE_INSUMO_OBTENER_TODOS_SP;
+/
+
+-- OBTENER UN Insumo por ID (para el formulario de edición)
+-- Devuelve las columnas necesarias para el formulario
+CREATE OR REPLACE PROCEDURE FIDE_INSUMO_OBTENER_POR_ID_SP (
+    P_ID_INSUMO IN NUMBER,
+    P_RESULTADO OUT SYS_REFCURSOR
+) IS
+BEGIN
+    OPEN P_RESULTADO FOR
+        SELECT
+            id_insumo,
+            codigo,
+            nombre,
+            descripcion,
+            precio,
+            tipo,
+            id_categoria -- El ID para el <select> del formulario
+        FROM FIDE_INSUMO_TB
+        WHERE id_insumo = P_ID_INSUMO;
+
+END FIDE_INSUMO_OBTENER_POR_ID_SP;
+/
+
+-- INSERTAR un Insumo Nuevo
+-- Recibe los parámetros del formulario Vue, usa secuencia para ID
 CREATE OR REPLACE PROCEDURE FIDE_INSUMO_INSERTAR_SP (
-P_ID_INSUMO IN NUMBER,
-P_NOMBRE IN VARCHAR2,
-P_DESCRIPCION IN VARCHAR2,
-P_ID_UNIDAD_MEDIDA IN NUMBER
+    P_CODIGO IN FIDE_INSUMO_TB.codigo%TYPE,
+    P_NOMBRE IN FIDE_INSUMO_TB.nombre%TYPE,
+    P_DESCRIPCION IN FIDE_INSUMO_TB.descripcion%TYPE,
+    P_PRECIO IN FIDE_INSUMO_TB.precio%TYPE,
+    P_TIPO IN FIDE_INSUMO_TB.tipo%TYPE,
+    P_ID_CATEGORIA IN FIDE_INSUMO_TB.id_categoria%TYPE
 ) IS
 BEGIN
-INSERT INTO FIDE_INSUMO_TB (
-id_insumo, nombre, descripcion, id_unidad_medida
-) VALUES (
-P_ID_INSUMO, P_NOMBRE, P_DESCRIPCION, P_ID_UNIDAD_MEDIDA
-);
-COMMIT;
-END;
+    INSERT INTO FIDE_INSUMO_TB (
+        id_insumo, -- Usa secuencia
+        codigo,
+        nombre,
+        descripcion,
+        precio,
+        tipo,
+        id_categoria
+    ) VALUES (
+        FIDE_INSUMO_SEQ.NEXTVAL, 
+        P_CODIGO,
+        P_NOMBRE,
+        P_DESCRIPCION,
+        P_PRECIO,
+        P_TIPO,
+        P_ID_CATEGORIA
+    );
+    COMMIT; 
+END FIDE_INSUMO_INSERTAR_SP;
 /
--- Actualizar un insumo
+
+-- ACTUALIZAR un Insumo existente
+-- Recibe ID y los demás datos del formulario Vue
 CREATE OR REPLACE PROCEDURE FIDE_INSUMO_ACTUALIZAR_SP (
-P_ID_INSUMO IN NUMBER,
-P_NOMBRE IN VARCHAR2,
-P_DESCRIPCION IN VARCHAR2,
-P_ID_UNIDAD_MEDIDA IN NUMBER
+    P_ID_INSUMO IN FIDE_INSUMO_TB.id_insumo%TYPE,
+    P_CODIGO IN FIDE_INSUMO_TB.codigo%TYPE,
+    P_NOMBRE IN FIDE_INSUMO_TB.nombre%TYPE,
+    P_DESCRIPCION IN FIDE_INSUMO_TB.descripcion%TYPE,
+    P_PRECIO IN FIDE_INSUMO_TB.precio%TYPE,
+    P_TIPO IN FIDE_INSUMO_TB.tipo%TYPE,
+    P_ID_CATEGORIA IN FIDE_INSUMO_TB.id_categoria%TYPE
 ) IS
 BEGIN
-UPDATE FIDE_INSUMO_TB
-SET nombre = P_NOMBRE,
-descripcion = P_DESCRIPCION,
-id_unidad_medida = P_ID_UNIDAD_MEDIDA
-WHERE id_insumo = P_ID_INSUMO;
-COMMIT;
-END;
+    UPDATE FIDE_INSUMO_TB
+    SET codigo = P_CODIGO,
+        nombre = P_NOMBRE,
+        descripcion = P_DESCRIPCION,
+        precio = P_PRECIO,
+        tipo = P_TIPO,
+        id_categoria= P_ID_CATEGORIA
+    WHERE id_insumo = P_ID_INSUMO;
+    COMMIT;
+END FIDE_INSUMO_ACTUALIZAR_SP;
 /
--- Eliminar un insumo
+
+-- ELIMINAR un Insumo por ID
 CREATE OR REPLACE PROCEDURE FIDE_INSUMO_ELIMINAR_SP (
-P_ID IN NUMBER
+    P_ID IN NUMBER
 ) IS
 BEGIN
-DELETE FROM FIDE_INSUMO_TB
-WHERE id_insumo = P_ID;
-COMMIT;
-END;
+    DELETE FROM FIDE_INSUMO_TB
+    WHERE id_insumo = P_ID;
+    COMMIT; 
+END FIDE_INSUMO_ELIMINAR_SP;
 /
--- Obtener un insumo por ID
-CREATE OR REPLACE PROCEDURE FIDE_INSUMO_OBTENER_POR_ID_SP (
-P_ID IN NUMBER,
-P_RESULTADO OUT SYS_REFCURSOR
-) IS
-BEGIN
-OPEN P_RESULTADO FOR
-SELECT * FROM FIDE_INSUMO_TB
-WHERE id_insumo = P_ID;
-COMMIT;
-END;
-/
--- Obtener datos de insumo por ID
-CREATE OR REPLACE PROCEDURE FIDE_INSUMO_OBTENER_POR_ID_SP (
-P_ID_INSUMO IN NUMBER,
-P_RESULTADO OUT SYS_REFCURSOR
-)
-IS
-BEGIN
-OPEN P_RESULTADO FOR
-SELECT id_insumo, nombre, descripcion, id_unidad_medida
-FROM FIDE_INSUMO_TB
-WHERE id_insumo = P_ID_INSUMO;
-COMMIT;
-END;
-/
--- Obtener datos de insumo por nombre
+
+-- OBTENER Insumos por Nombre 
 CREATE OR REPLACE PROCEDURE FIDE_INSUMO_OBTENER_POR_NOMBRE_SP (
-P_NOMBRE IN VARCHAR2,
-P_RESULTADO OUT SYS_REFCURSOR
-)
-IS
+    P_NOMBRE IN VARCHAR2,
+    P_RESULTADO OUT SYS_REFCURSOR
+) IS
 BEGIN
-OPEN P_RESULTADO FOR
-SELECT id_insumo, nombre, descripcion, id_unidad_medida
-FROM FIDE_INSUMO_TB
-WHERE UPPER(nombre) = UPPER(P_NOMBRE);
-COMMIT;
-END;
+    OPEN P_RESULTADO FOR
+     SELECT
+            i.id_insumo, i.codigo, i.nombre, i.descripcion, i.precio, i.tipo, i.id_categoria,
+            cat.nombre AS nombre_categoria
+        FROM
+            FIDE_INSUMO_TB i
+            LEFT JOIN FIDE_CATEGORIA_TB cat ON i.id_categoria = cat.id_categoria
+     WHERE UPPER(i.nombre) LIKE '%' || UPPER(P_NOMBRE) || '%'; -- Búsqueda con LIKE
+     
+END FIDE_INSUMO_OBTENER_POR_NOMBRE_SP;
 /
 -- 16 FIDE_PROVEEDOR_TB
 -- Insertar un proveedor
@@ -1010,57 +1102,8 @@ WHERE id_orden_compra = P_ID;
 COMMIT;
 END;
 /
--- 18 FIDE_PRODUCTO_INSUMO_TB
--- Insertar relación producto-insumo
-CREATE OR REPLACE PROCEDURE FIDE_PRODUCTO_INSUMO_INSERTAR_SP (
-P_ID_PRODUCTO_INSUMO IN NUMBER,
-P_ID_PRODUCTO IN NUMBER,
-P_ID_INSUMO IN NUMBER
-) IS
-BEGIN
-INSERT INTO FIDE_PRODUCTO_INSUMO_TB (
-id_producto_insumo, id_producto, id_insumo
-) VALUES (
-P_ID_PRODUCTO_INSUMO, P_ID_PRODUCTO, P_ID_INSUMO
-);
-COMMIT;
-END;
-/
--- Actualizar relación producto-insumo
-CREATE OR REPLACE PROCEDURE FIDE_PRODUCTO_INSUMO_ACTUALIZAR_SP (
-P_ID_PRODUCTO_INSUMO IN NUMBER,
-P_ID_PRODUCTO IN NUMBER,
-P_ID_INSUMO IN NUMBER
-) IS
-BEGIN
-UPDATE FIDE_PRODUCTO_INSUMO_TB
-SET id_producto = P_ID_PRODUCTO,
-id_insumo = P_ID_INSUMO
-WHERE id_producto_insumo = P_ID_PRODUCTO_INSUMO;
-COMMIT;
-END;
-/
--- Eliminar relación producto-insumo
-CREATE OR REPLACE PROCEDURE FIDE_PRODUCTO_INSUMO_ELIMINAR_SP (
-P_ID IN NUMBER
-) IS
-BEGIN
-DELETE FROM FIDE_PRODUCTO_INSUMO_TB
-WHERE id_producto_insumo = P_ID;
-COMMIT;
-END;
-/
--- Obtener relación producto-insumo por ID
-CREATE OR REPLACE PROCEDURE FIDE_PRODUCTO_INSUMO_OBTENER_POR_ID_SP (
-P_ID IN NUMBER,
-P_RESULTADO OUT SYS_REFCURSOR
-) IS
-BEGIN
-OPEN P_RESULTADO FOR
-SELECT * FROM FIDE_PRODUCTO_INSUMO_TB
-WHERE id_producto_insumo = P_ID;
-COMMIT;
-END;
+-- 18 FIDE_PRODUCTO_INSUMO_TB BORRADO
+
 /
 -- 19 FIDE_TIPO_EDIFICIO_TB
 -- Insertar un tipo de edificio

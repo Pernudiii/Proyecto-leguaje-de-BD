@@ -152,16 +152,34 @@ export default {
                     type: 'is-danger',
                     hasIcon: true,
                     onConfirm: () => {
-                        this.cargando = true
-                        HttpService.eliminar("eliminar_categoria.php", categoria.id)
-                        .then(eliminado => {
-                            if(eliminado) {
-                                this.obtenerCategorias()
-                                this.$buefy.toast.open('Categoría eliminada')
-                                this.cargando = false
-                            }
-                        })
-                        
+                        const idParaBorrar = categoria.id_categoria;
+                        if (!idParaBorrar || isNaN(parseInt(idParaBorrar))) {
+                            console.error("ID de categoría inválido para eliminar:", categoria);
+                            this.$buefy.toast.open({ message: 'Error: ID de categoría inválido.', type: 'is-danger' });
+                            return; // No continuar si no hay ID
+                        }
+
+                        this.cargando = true;
+                        // Llama al servicio pasando el ID correcto
+                        HttpService.eliminar("eliminar_categoria.php", idParaBorrar)
+                            .then(respuesta => { // 'respuesta' es el JSON parseado devuelto por PHP
+                                // --- CORRECCIÓN 2: Verifica la propiedad 'success' ---
+                                if (respuesta && respuesta.success) {
+                                    // Éxito REAL
+                                    this.$buefy.toast.open('Categoría eliminada');
+                                    this.obtenerCategorias(); // Refresca la lista
+                                } else {
+                                    // Falla informada por el backend
+                                    this.$buefy.toast.open({ message: `Error: ${respuesta.error || 'No se pudo eliminar'}`, type: 'is-danger' });
+                                }
+                            })
+                            .catch(error => { // Error de red o de parseo JSON
+                                console.error("Error al eliminar:", error);
+                                this.$buefy.toast.open({ message: 'Error de comunicación al eliminar', type: 'is-danger' });
+                            })
+                            .finally(() => {
+                                this.cargando = false; // Detener carga en cualquier caso
+                            });
                     }
                 })
             },

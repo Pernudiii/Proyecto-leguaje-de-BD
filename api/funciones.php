@@ -735,15 +735,169 @@ function registrarUsuario($usuario) {
 
     return $stmt->execute();
 }
+if (!defined('DB_USER')) define('DB_USER', 'ADMINISTRADOR');
+if (!defined('DB_PASS')) define('DB_PASS', '123');
+if (!defined('DB_TNS')) define('DB_TNS', '//localhost:1521/xe');
+if (!defined('DB_CHARSET')) define('DB_CHARSET', 'AL32UTF8');
 
-function obtenerInsumosPorNombre($insumo){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("SELECT insumos.*, IFNULL(categorias.nombre, 'NO DEFINIDA') AS categoria
-	FROM insumos
-	LEFT JOIN categorias ON categorias.id = insumos.categoria 
-	WHERE insumos.nombre LIKE ? ");
-	$sentencia->execute(['%'.$insumo.'%']);
-	return $sentencia->fetchAll();
+function obtenerInsumos($filtros = null) {
+    $conn = null; $stid = null; $curs = null;
+    $insumos_oracle = []; $insumos_final = [];
+    $procedure_name = 'FIDE_INSUMO_OBTENER_TODOS_SP'; // Llama al SP correcto
+
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Insumos Todos): " . oci_error()['message']);
+
+        $sql = "BEGIN {$procedure_name}(:cursor); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Insumos Todos): " . oci_error($conn)['message']);
+
+        $curs = oci_new_cursor($conn);
+        if (!$curs) throw new Exception("OCI8 Crear Cursor (Insumos Todos): " . oci_error($conn)['message']);
+
+        if (!oci_bind_by_name($stid, ":cursor", $curs, -1, OCI_B_CURSOR)) {
+            throw new Exception("OCI8 Bind Cursor (Insumos Todos): " . oci_error($stid)['message']);
+        }
+        if (!oci_execute($stid, OCI_DEFAULT)) {
+            throw new Exception("OCI8 Ejecutar SP (Insumos Todos): " . oci_error($stid)['message']);
+        }
+        if (!oci_execute($curs, OCI_DEFAULT)) {
+             throw new Exception("OCI8 Ejecutar Cursor (Insumos Todos): " . oci_error($curs)['message']);
+        }
+
+        $num_filas = oci_fetch_all($curs, $insumos_oracle, 0, -1, OCI_FETCHSTATEMENT_BY_ROW + OCI_ASSOC);
+        if ($num_filas === false) $insumos_oracle = [];
+
+        foreach ($insumos_oracle as $fila_oracle) {
+            $insumos_final[] = array_change_key_case($fila_oracle, CASE_LOWER);
+        }
+
+        // Filtrado en PHP (ajusta si tienes un SP para filtrar)
+        if ($filtros && !empty(array_filter((array)$filtros))) {
+             $insumos_filtrados = array_filter($insumos_final, function($insumo) use ($filtros) {
+                 $pasa = true;
+                 if (!empty($filtros->tipo) && isset($insumo['tipo']) && strtolower($insumo['tipo']) != strtolower($filtros->tipo)) $pasa = false;
+                 if (!empty($filtros->categoria) && isset($insumo['id_categoria']) && $insumo['id_categoria'] != $filtros->categoria) $pasa = false;
+                  if (!empty($filtros->nombre)) {
+                      $nombre_match = isset($insumo['nombre']) && stripos($insumo['nombre'], $filtros->nombre) !== false;
+                      $codigo_match = isset($insumo['codigo']) && stripos($insumo['codigo'], $filtros->nombre) !== false;
+                      if (!$nombre_match && !$codigo_match) $pasa = false;
+                 }
+                 return $pasa;
+             });
+             return array_values($insumos_filtrados);
+        } else {
+            return $insumos_final;
+        }
+    } catch (Exception $e) {
+        error_log(">>> ERROR obtenerInsumos [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($curs) @oci_free_statement($curs); if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
+}
+
+function obtenerInsumoPorId(int $idInsumo) {
+    $conn = null; $stid = null; $curs = null; $insumo_final = null;
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Insumo ID): " . oci_error()['message']);
+        $sql = "BEGIN FIDE_INSUMO_OBTENER_POR_ID_SP(:P_ID_INSUMO, :P_RESULTADO); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Insumo ID): " . oci_error($conn)['message']);
+        if (!oci_bind_by_name($stid, ":P_ID_INSUMO", $idInsumo, -1, SQLT_INT)) throw new Exception("OCI8 Bind ID (Insumo ID): " . oci_error($stid)['message']);
+        $curs = oci_new_cursor($conn);
+        if (!$curs) throw new Exception("OCI8 Crear Cursor (Insumo ID): " . oci_error($conn)['message']);
+        if (!oci_bind_by_name($stid, ":P_RESULTADO", $curs, -1, OCI_B_CURSOR)) throw new Exception("OCI8 Bind Cursor (Insumo ID): " . oci_error($stid)['message']);
+        if (!oci_execute($stid, OCI_DEFAULT)) throw new Exception("OCI8 Ejecutar SP (Insumo ID): " . oci_error($stid)['message']);
+        if (!oci_execute($curs, OCI_DEFAULT)) throw new Exception("OCI8 Ejecutar Cursor (Insumo ID): " . oci_error($curs)['message']);
+        $insumo_oci = oci_fetch_assoc($curs);
+        if ($insumo_oci !== false) $insumo_final = (object)array_change_key_case($insumo_oci, CASE_LOWER);
+        return $insumo_final;
+    } catch (Exception $e) {
+        error_log(">>> ERROR obtenerInsumoPorId(ID:{$idInsumo}) [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($curs) @oci_free_statement($curs); if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
+}
+
+function registrarInsumo($insumo) {
+    $conn = null; $stid = null; $exito = false;
+    if (!isset($insumo->codigo) || !isset($insumo->nombre) || !isset($insumo->precio) || !isset($insumo->tipo) || !isset($insumo->categoria)) throw new InvalidArgumentException("Datos incompletos para registrar insumo.");
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Registrar Insumo): " . oci_error()['message']);
+        $sql = "BEGIN FIDE_INSUMO_INSERTAR_SP(:p_codigo, :p_nombre, :p_descripcion, :p_precio, :p_tipo, :p_id_categoria); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Registrar Insumo): " . oci_error($conn)['message']);
+        $precioFloat = floatval($insumo->precio);
+        $idCategoriaInt = intval($insumo->categoria);
+        $descripcionStr = isset($insumo->descripcion) ? strval($insumo->descripcion) : null;
+        oci_bind_by_name($stid, ":p_codigo", $insumo->codigo);
+        oci_bind_by_name($stid, ":p_nombre", $insumo->nombre);
+        oci_bind_by_name($stid, ":p_descripcion", $descripcionStr);
+        oci_bind_by_name($stid, ":p_precio", $precioFloat);
+        oci_bind_by_name($stid, ":p_tipo", $insumo->tipo);
+        oci_bind_by_name($stid, ":p_id_categoria", $idCategoriaInt, -1, SQLT_INT);
+        $exito = oci_execute($stid, OCI_COMMIT_ON_SUCCESS);
+        if (!$exito) error_log("Error OCI8 Ejecutar (Registrar Insumo): " . ($e = oci_error($stid)) ? htmlentities($e['message']) : 'Error desconocido');
+        return $exito;
+    } catch (Exception $e) {
+        error_log(">>> ERROR registrarInsumo [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
+}
+
+function editarInsumo($insumo) {
+    $conn = null; $stid = null; $exito = false;
+    if (!isset($insumo->id) || !isset($insumo->codigo) || !isset($insumo->nombre) || !isset($insumo->precio) || !isset($insumo->tipo) || !isset($insumo->categoria)) throw new InvalidArgumentException("Datos incompletos para editar insumo (id requerido).");
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Editar Insumo): " . oci_error()['message']);
+        $sql = "BEGIN FIDE_INSUMO_ACTUALIZAR_SP(:p_id_insumo, :p_codigo, :p_nombre, :p_descripcion, :p_precio, :p_tipo, :p_id_categoria); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Editar Insumo): " . oci_error($conn)['message']);
+        $idInsumoInt = intval($insumo->id);
+        $precioFloat = floatval($insumo->precio);
+        $idCategoriaInt = intval($insumo->categoria);
+        $descripcionStr = isset($insumo->descripcion) ? strval($insumo->descripcion) : null;
+        oci_bind_by_name($stid, ":p_id_insumo", $idInsumoInt, -1, SQLT_INT);
+        oci_bind_by_name($stid, ":p_codigo", $insumo->codigo);
+        oci_bind_by_name($stid, ":p_nombre", $insumo->nombre);
+        oci_bind_by_name($stid, ":p_descripcion", $descripcionStr);
+        oci_bind_by_name($stid, ":p_precio", $precioFloat);
+        oci_bind_by_name($stid, ":p_tipo", $insumo->tipo);
+        oci_bind_by_name($stid, ":p_id_categoria", $idCategoriaInt, -1, SQLT_INT);
+        $exito = oci_execute($stid, OCI_COMMIT_ON_SUCCESS);
+        if (!$exito) error_log("Error OCI8 Ejecutar (Editar Insumo): " . ($e = oci_error($stid)) ? htmlentities($e['message']) : 'Error desconocido');
+        return $exito;
+    } catch (Exception $e) {
+        error_log(">>> ERROR editarInsumo(ID: {$insumo->id}) [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
+}
+
+function eliminarInsumo(int $idInsumo) {
+    $conn = null; $stid = null; $exito = false;
+    if ($idInsumo <= 0) throw new InvalidArgumentException("ID de insumo inválido para eliminar.");
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Eliminar Insumo): " . oci_error()['message']);
+        // Asegúrate que el parámetro en el SP se llame :P_ID
+        $sql = "BEGIN FIDE_INSUMO_ELIMINAR_SP(:P_ID); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Eliminar Insumo): " . oci_error($conn)['message']);
+        oci_bind_by_name($stid, ":P_ID", $idInsumo, -1, SQLT_INT);
+        $exito = oci_execute($stid, OCI_COMMIT_ON_SUCCESS);
+        if (!$exito) error_log("Error OCI8 Ejecutar (Eliminar Insumo): " . ($e = oci_error($stid)) ? htmlentities($e['message']) : 'Error desconocido');
+        return $exito;
+    } catch (Exception $e) {
+        error_log(">>> ERROR eliminarInsumo(ID: {$idInsumo}) [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
 }
 
 function obtenerImagen($imagen){
@@ -758,90 +912,179 @@ function obtenerImagen($imagen){
     return $file;
 }
 
-function eliminarInsumo($idInsumo){
-	$bd = conectarBaseDatos();
-    $sentencia = $bd->prepare("DELETE FROM insumos WHERE id = ?");
-	return $sentencia->execute([$idInsumo]);
+function obtenerCategoriasPorTipo(string $tipo) {
+    $conn = null; $stid = null; $curs = null;
+    $categorias_oracle = []; $categorias_final = [];
+
+    // Validar tipo (básico)
+    if (empty($tipo) || !in_array(strtoupper($tipo), ['PLATILLO', 'BEBIDA'])) {
+        // Si el tipo está vacío o no es válido, devuelve un array vacío
+        // o podrías lanzar InvalidArgumentException si prefieres ser más estricto
+        return [];
+        // throw new InvalidArgumentException("Tipo inválido para obtener categorías.");
+    }
+
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Categorias Por Tipo): " . oci_error()['message']);
+
+        $sql = "BEGIN FIDE_CATEGORIA_OBTENER_POR_TIPO_SP(:P_TIPO, :P_RESULTADO); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Categorias Por Tipo): " . oci_error($conn)['message']);
+
+        // Bind Parámetro ENTRADA (Tipo)
+        if (!oci_bind_by_name($stid, ":P_TIPO", $tipo)) { // No necesita tipo específico SQLT_*
+             throw new Exception("OCI8 Bind Tipo (Categorias Por Tipo): " . oci_error($stid)['message']);
+        }
+        // Bind Parámetro SALIDA (Cursor)
+        $curs = oci_new_cursor($conn);
+        if (!$curs) throw new Exception("OCI8 Crear Cursor (Categorias Por Tipo): " . oci_error($conn)['message']);
+        if (!oci_bind_by_name($stid, ":P_RESULTADO", $curs, -1, OCI_B_CURSOR)) {
+             throw new Exception("OCI8 Bind Cursor (Categorias Por Tipo): " . oci_error($stid)['message']);
+        }
+
+        if (!oci_execute($stid, OCI_DEFAULT)) {
+            throw new Exception("OCI8 Ejecutar SP (Categorias Por Tipo): " . oci_error($stid)['message']);
+        }
+        if (!oci_execute($curs, OCI_DEFAULT)) {
+            throw new Exception("OCI8 Ejecutar Cursor (Categorias Por Tipo): " . oci_error($curs)['message']);
+        }
+
+        $num_filas = oci_fetch_all($curs, $categorias_oracle, 0, -1, OCI_FETCHSTATEMENT_BY_ROW + OCI_ASSOC);
+        if ($num_filas === false) $categorias_oracle = [];
+
+        foreach ($categorias_oracle as $fila_oracle) {
+            $categorias_final[] = array_change_key_case($fila_oracle, CASE_LOWER);
+        }
+        return $categorias_final;
+
+    } catch (Exception $e) {
+        error_log(">>> ERROR obtenerCategoriasPorTipo(Tipo:{$tipo}) [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($curs) @oci_free_statement($curs); if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
+}
+function obtenerCategorias() {
+    $conn = null; $stid = null; $curs = null;
+    $categorias_oracle = []; $categorias_final = [];
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Categorias Todas): " . oci_error()['message']);
+        $sql = 'BEGIN FIDE_CATEGORIA_OBTENER_TODAS_SP(:cursor); END;';
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Categorias Todas): " . oci_error($conn)['message']);
+        $curs = oci_new_cursor($conn);
+        if (!$curs) throw new Exception("OCI8 Crear Cursor (Categorias Todas): " . oci_error($conn)['message']);
+        if (!oci_bind_by_name($stid, ":cursor", $curs, -1, OCI_B_CURSOR)) throw new Exception("OCI8 Bind Cursor (Categorias Todas): " . oci_error($stid)['message']);
+        if (!oci_execute($stid, OCI_DEFAULT)) throw new Exception("OCI8 Ejecutar SP (Categorias Todas): " . oci_error($stid)['message']);
+        if (!oci_execute($curs, OCI_DEFAULT)) throw new Exception("OCI8 Ejecutar Cursor (Categorias Todas): " . oci_error($curs)['message']);
+        $num_filas = oci_fetch_all($curs, $categorias_oracle, 0, -1, OCI_FETCHSTATEMENT_BY_ROW + OCI_ASSOC);
+        if ($num_filas === false) $categorias_oracle = [];
+        foreach ($categorias_oracle as $fila_oracle) $categorias_final[] = array_change_key_case($fila_oracle, CASE_LOWER);
+        return $categorias_final;
+    } catch (Exception $e) {
+        error_log(">>> ERROR obtenerCategorias [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($curs) @oci_free_statement($curs); if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
 }
 
-function editarInsumo($insumo){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("UPDATE insumos SET tipo = ?, codigo = ?, nombre = ?, descripcion = ?, categoria = ?, precio = ? WHERE id = ?");
-	return $sentencia->execute([$insumo->tipo, $insumo->codigo, $insumo->nombre, $insumo->descripcion,$insumo->categoria, $insumo->precio, $insumo->id]);	
+function obtenerCategoriaPorId(int $idCategoria) {
+    $conn = null; $stid = null; $curs = null; $categoria_final = null;
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Categoria ID): " . oci_error()['message']);
+        $sql = "BEGIN FIDE_CATEGORIA_OBTENER_POR_ID_SP(:P_ID_CATEGORIA, :P_RESULTADO); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Categoria ID): " . oci_error($conn)['message']);
+        if (!oci_bind_by_name($stid, ":P_ID_CATEGORIA", $idCategoria, -1, SQLT_INT)) throw new Exception("OCI8 Bind ID (Categoria ID): " . oci_error($stid)['message']);
+        $curs = oci_new_cursor($conn);
+        if (!$curs) throw new Exception("OCI8 Crear Cursor (Categoria ID): " . oci_error($conn)['message']);
+        if (!oci_bind_by_name($stid, ":P_RESULTADO", $curs, -1, OCI_B_CURSOR)) throw new Exception("OCI8 Bind Cursor (Categoria ID): " . oci_error($stid)['message']);
+        if (!oci_execute($stid, OCI_DEFAULT)) throw new Exception("OCI8 Ejecutar SP (Categoria ID): " . oci_error($stid)['message']);
+        if (!oci_execute($curs, OCI_DEFAULT)) throw new Exception("OCI8 Ejecutar Cursor (Categoria ID): " . oci_error($curs)['message']);
+        $categoria_oci = oci_fetch_assoc($curs);
+        if ($categoria_oci !== false) $categoria_final = (object)array_change_key_case($categoria_oci, CASE_LOWER);
+        return $categoria_final;
+    } catch (Exception $e) {
+        error_log(">>> ERROR obtenerCategoriaPorId(ID:{$idCategoria}) [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($curs) @oci_free_statement($curs); if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
 }
 
-function obtenerInsumoPorId($idInsumo){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("SELECT * FROM insumos WHERE id = ?");
-	$sentencia->execute([$idInsumo]);
-	return $sentencia->fetchObject();
+function registrarCategoria($categoria) { // $categoria debe tener ->tipo, ->nombre, ->descripcion (opcional)
+    $conn = null; $stid = null; $exito = false;
+    if (!isset($categoria->tipo) || trim($categoria->tipo) === '' || !isset($categoria->nombre) || trim($categoria->nombre) === '') {
+         throw new InvalidArgumentException("Se requiere tipo y nombre para registrar categoría.");
+    }
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Registrar Categoria): " . oci_error()['message']);
+        $sql = "BEGIN FIDE_CATEGORIA_INSERTAR_SP(:p_tipo, :p_nombre, :p_descripcion); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Registrar Categoria): " . oci_error($conn)['message']);
+        $descripcionStr = isset($categoria->descripcion) ? strval($categoria->descripcion) : null;
+        oci_bind_by_name($stid, ":p_tipo", $categoria->tipo);
+        oci_bind_by_name($stid, ":p_nombre", $categoria->nombre);
+        oci_bind_by_name($stid, ":p_descripcion", $descripcionStr);
+        $exito = oci_execute($stid, OCI_COMMIT_ON_SUCCESS);
+        if (!$exito) error_log("Error OCI8 Ejecutar (Registrar Categoria): " . ($e = oci_error($stid)) ? htmlentities($e['message']) : 'Error desconocido');
+        return $exito;
+    } catch (Exception $e) {
+        error_log(">>> ERROR registrarCategoria [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
 }
 
-function obtenerInsumos($filtros){
-	$bd = conectarBaseDatos();
-	$valoresAEjecutar = [];
-	$sql = "SELECT insumos.*, IFNULL(categorias.nombre, 'NO DEFINIDA') AS categoria
-	FROM insumos
-	LEFT JOIN categorias ON categorias.id = insumos.categoria WHERE 1 ";
-
-	if($filtros->tipo != "") {
-		$sql .= " AND  insumos.tipo = ?";
-		array_push($valoresAEjecutar, $filtros->tipo);
-	}
-
-	if($filtros->categoria != "") {
-		$sql .= " AND  insumos.categoria = ?";
-		array_push($valoresAEjecutar, $filtros->categoria);
-	}
-
-	if($filtros->nombre != "") {
-		$sql .= " AND  insumos.nombre LIKE ? OR insumos.codigo LIKE ?";
-		array_push($valoresAEjecutar, '%'.$filtros->nombre.'%');
-		array_push($valoresAEjecutar, '%'.$filtros->nombre.'%');
-	}
-
-	$sentencia = $bd->prepare($sql);
-	$sentencia->execute($valoresAEjecutar);
-	return $sentencia->fetchAll();
+function editarCategoria($categoria) { // $categoria debe tener ->id_categoria, ->tipo, ->nombre, ->descripcion (opcional)
+    $conn = null; $stid = null; $exito = false;
+    if (!isset($categoria->id_categoria) || !is_numeric($categoria->id_categoria) || !isset($categoria->tipo) || trim($categoria->tipo) === '' || !isset($categoria->nombre) || trim($categoria->nombre) === '') {
+         throw new InvalidArgumentException("Se requiere ID numérico, tipo y nombre para editar categoría.");
+    }
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Editar Categoria): " . oci_error()['message']);
+        $sql = "BEGIN FIDE_CATEGORIA_ACTUALIZAR_SP(:p_id_categoria, :p_tipo, :p_nombre, :p_descripcion); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Editar Categoria): " . oci_error($conn)['message']);
+        $idCategoriaInt = intval($categoria->id_categoria);
+        $descripcionStr = isset($categoria->descripcion) ? strval($categoria->descripcion) : null;
+        oci_bind_by_name($stid, ":p_id_categoria", $idCategoriaInt, -1, SQLT_INT);
+        oci_bind_by_name($stid, ":p_tipo", $categoria->tipo);
+        oci_bind_by_name($stid, ":p_nombre", $categoria->nombre);
+        oci_bind_by_name($stid, ":p_descripcion", $descripcionStr);
+        $exito = oci_execute($stid, OCI_COMMIT_ON_SUCCESS);
+        if (!$exito) error_log("Error OCI8 Ejecutar (Editar Categoria): " . ($e = oci_error($stid)) ? htmlentities($e['message']) : 'Error desconocido');
+        return $exito;
+    } catch (Exception $e) {
+        error_log(">>> ERROR editarCategoria(ID: {$categoria->id_categoria}) [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
 }
 
-function registrarInsumo($insumo){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("INSERT INTO insumos (codigo, nombre, descripcion, precio, tipo,  categoria) VALUES (?,?,?,?,?,?)");
-	return $sentencia->execute([$insumo->codigo, $insumo->nombre, $insumo->descripcion,$insumo->precio, $insumo->tipo, $insumo->categoria]);
+function eliminarCategoria(int $idCategoria) {
+    $conn = null; $stid = null; $exito = false;
+    if ($idCategoria <= 0) throw new InvalidArgumentException("ID de categoría inválido para eliminar.");
+    try {
+        $conn = oci_connect(DB_USER, DB_PASS, DB_TNS, DB_CHARSET);
+        if (!$conn) throw new Exception("OCI8 Conectar (Eliminar Categoria): " . oci_error()['message']);
+        $sql = "BEGIN FIDE_CATEGORIA_ELIMINAR_SP(:P_ID_CATEGORIA); END;";
+        $stid = oci_parse($conn, $sql);
+        if (!$stid) throw new Exception("OCI8 Parsear (Eliminar Categoria): " . oci_error($conn)['message']);
+        oci_bind_by_name($stid, ":P_ID_CATEGORIA", $idCategoria, -1, SQLT_INT);
+        $exito = oci_execute($stid, OCI_COMMIT_ON_SUCCESS);
+        if (!$exito) error_log("Error OCI8 Ejecutar (Eliminar Categoria): " . ($e = oci_error($stid)) ? htmlentities($e['message']) : 'Error desconocido');
+        return $exito;
+    } catch (Exception $e) {
+        error_log(">>> ERROR eliminarCategoria(ID: {$idCategoria}) [OCI8]: " . $e->getMessage()); throw $e;
+    } finally {
+        if ($stid) @oci_free_statement($stid); if ($conn) @oci_close($conn);
+    }
 }
 
-function obtenerCategoriasPorTipo($tipo){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("SELECT * FROM categorias WHERE tipo = ?");
-	$sentencia->execute([$tipo]);
-	return $sentencia->fetchAll();
-}
-
-
-function eliminarCategoria($idCategoria) {
-    $bd = conectarBaseDatos();
-    $sentencia = $bd->prepare("DELETE FROM categorias WHERE id = ?");
-	return $sentencia->execute([$idCategoria]);
-}
-
-function editarCategoria($categoria) {
-    $bd = conectarBaseDatos();
-    $sentencia = $bd->prepare("UPDATE categorias SET tipo = ?, nombre = ?, descripcion = ? WHERE id = ?");
-	return $sentencia->execute([$categoria->tipo, $categoria->nombre, $categoria->descripcion, $categoria->id]);
-}
-
-function registrarCategoria($categoria){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->prepare("INSERT INTO categorias (tipo, nombre, descripcion) VALUES (?,?,?)");
-	return $sentencia->execute([$categoria->tipo, $categoria->nombre, $categoria->descripcion]);
-}
-
-function obtenerCategorias(){
-	$bd = conectarBaseDatos();
-	$sentencia = $bd->query("SELECT * FROM categorias ORDER BY id DESC");
-	return $sentencia->fetchAll();
-}
 
 function conectarBaseDatos() {
     $host = "localhost";

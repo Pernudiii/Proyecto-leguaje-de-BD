@@ -64,15 +64,13 @@
             v-model="filtros.categoria"
             @change.native="busquedaAvanzada"
           >
-            <option value="" selected>Selecciona el tipo de insumo</option>
+            <option value="" selected>Selecciona la categoría</option>
             <option
               v-for="categoria in categorias"
-              :key="categoria.id"
-              :value="categoria.id"
-            >
-              {{ categoria.nombre }}
+              :key="categoria.id_categoria" :value="categoria.id_categoria">
+              {{ categoria.nombre }} 
             </option>
-          </b-select>
+         </b-select>
         </b-field>
         <b-field label="Nombre del insumo" expanded>
           <b-input
